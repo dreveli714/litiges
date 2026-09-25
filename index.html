@@ -146,6 +146,19 @@ th{font-weight:700;color:var(--muted);font-size:13px}
 .diagbox{border-left:4px solid var(--glass);background:var(--glass-soft);padding:12px 14px;border-radius:0 12px 12px 0}
 .diagbox p{margin:2px 0}
 .hist{font-size:13px;color:var(--muted);margin:0;padding-left:16px}
+.tl{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.tl li{display:grid;grid-template-columns:118px 1fr;gap:10px;font-size:14px;padding:6px 10px;border-radius:10px}
+.tl time{font-size:12.5px;color:var(--muted)}
+.tl li.sys{color:var(--muted);font-size:13px}
+.tl li.note{background:var(--glass-soft);font-weight:700}
+.tl li.mail{background:var(--amber-soft);font-weight:700}
+.tl li.lu{color:var(--muted);font-size:12.5px;padding:2px 10px}
+.quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.quick button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 10px;font-size:13px;cursor:pointer;font-weight:600}
+.quick button:hover{border-color:var(--glass)}
+.chip.new{background:var(--amber);border-color:transparent;color:#fff;font-weight:800}
+.idbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.idbox code{background:var(--paper);border:1px solid var(--line);padding:2px 8px;border-radius:8px;color:var(--ink);font-weight:700}
 .falta{background:var(--amber-soft);border-radius:12px;padding:10px 12px;font-size:14px}
 .falta b{color:var(--amber)}
 
@@ -311,7 +324,10 @@ const I18N={
   drafting:'Rédaction…',reviewDraft:'Relisez et adaptez avant d’envoyer.',otherClaims:c=>`Autres réclamations de ${c}`,date:'Date',problemH:'Problème',backup:'Sauvegarde',openDrive:'Ouvrir le dossier Drive',history:'Historique',
   sentOn:d=>'Envoyé au fournisseur le '+d,catHint:'Une référence par ligne (ex. SOL 251). L’IA s’en sert pour corriger les références mal écrites.',catSaved:n=>`Catalogue enregistré (${n} références)`,
   apiUrl:'URL de l’application Apps Script',pin:'PIN',enter:'Entrer',badPin:'PIN incorrect',netErr:'Impossible de joindre le serveur',loading:'Chargement…',errSave:'Enregistrement impossible',preparing:'Préparation…',noCasesFilter:'Aucun dossier avec ces filtres',
-  pdf:'PDF'},
+  pdf:'PDF',followUp:'Suivi du dossier',notePh:'Ajouter une note : où en est le dossier ?',addNote:'Ajouter',noteAdded:'Note ajoutée',newB:'Nouveau',
+  relaunch:'Relancer l’IA',relaunching:'Analyse en cours…',relaunched:'Champs complétés par l’IA',lastNote:'Dernier suivi',
+  idHint:'Pour rattacher un nouveau mail à ce dossier, mettez ce code dans l’objet lors du transfert :',copyId:'Copier le code',
+  quick:['Client relancé','Photos demandées','Photos reçues','Échantillon demandé','Échantillon reçu','Transmis au technicien','Transmis au fournisseur','Réponse envoyée au client','Avoir émis','Remplacement expédié','Réclamation refusée']},
  en:{tabCases:'Cases',tabTech:'Technician',tabStats:'Statistics and supplier',refresh:'Refresh',catalog:'Catalogue',newClaim:'+ New claim',
   search:'Search',client:'Customer',ref:'Reference',type:'Type',status:'Status',from:'From',to:'To',clear:'Clear filters',exportList:'Export list (Excel)',
   all:'All',allF:'All',of:'of',noCases:'No claims yet',noCasesHint:'Click “New claim” or forward the email to the Gmail inbox with the Litiges label.',
@@ -335,7 +351,10 @@ const I18N={
   drafting:'Drafting…',reviewDraft:'Review and adapt before sending.',otherClaims:c=>`Other claims from ${c}`,date:'Date',problemH:'Problem',backup:'Backup',openDrive:'Open Drive folder',history:'History',
   sentOn:d=>'Sent to supplier on '+d,catHint:'One reference per line (e.g. SOL 251). The AI uses it to fix misspelled references.',catSaved:n=>`Catalogue saved (${n} references)`,
   apiUrl:'Apps Script web app URL',pin:'PIN',enter:'Sign in',badPin:'Wrong PIN',netErr:'Cannot reach the server',loading:'Loading…',errSave:'Could not save',preparing:'Preparing…',noCasesFilter:'No cases match these filters',
-  pdf:'PDF'}
+  pdf:'PDF',followUp:'Case follow-up',notePh:'Add a note: where does the case stand?',addNote:'Add',noteAdded:'Note added',newB:'New',
+  relaunch:'Run AI again',relaunching:'Analysing…',relaunched:'Fields filled in by AI',lastNote:'Last update',
+  idHint:'To attach a new email to this case, put this code in the subject when forwarding:',copyId:'Copy code',
+  quick:['Customer chased','Photos requested','Photos received','Sample requested','Sample received','Sent to technician','Sent to supplier','Reply sent to customer','Credit note issued','Replacement shipped','Claim rejected']}
 };
 const LABELS={
  tipo:{transporte:['Transport','Transport'],fabricacion:['Fabrication','Manufacturing'],envejecimiento:['Vieillissement / performance','Ageing / performance'],instalacion:['Pose / usage','Installation / use'],pendiente:['À déterminer','To be determined']},
@@ -388,6 +407,10 @@ async function pdfFirstPage(blob){
   return await new Promise(r=>cv.toBlob(r,'image/jpeg',.85));
 }
 function download(filename,data,mime){const b=data instanceof Blob?data:new Blob([data],{type:mime||'application/octet-stream'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
+function unread(c){const H=c.historial||[];let lastNew=-1,lastLu=-1;H.forEach((e,i)=>{if(e.kind==='new'||e.kind==='mail')lastNew=i;if(e.kind==='lu')lastLu=i});return lastNew>lastLu}
+function lastNote(c){const n=(c.historial||[]).filter(e=>e.kind==='note');return n.length?n[n.length-1]:null}
+function timeline(c){return (c.historial||[]).slice().reverse().map(e=>{const cls=e.kind==='note'?'note':(e.kind==='mail'||e.kind==='new')?'mail':e.kind==='lu'?'lu':'sys';
+  return `<li class="${cls}"><time>${new Date(e.t).toLocaleString(LANG==='fr'?'fr-FR':'en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</time><span>${esc(e.accion)}</span></li>`}).join('')}
 function histTxt(c){return (c.historial||[]).slice().reverse().map(h=>`<li>${new Date(h.t).toLocaleString(LANG==='fr'?'fr-FR':'en-GB')} : ${esc(h.accion)}</li>`).join('')}
 
 /* ============ API ============ */
@@ -479,9 +502,9 @@ function renderList(){
   if(!list.length){$('#rows').innerHTML=`<div class="empty-state"><strong>${t('noMatch')}</strong>${t('noMatchHint')}</div>`;return}
   $('#rows').innerHTML=list.map(c=>{const r=recInfo(c);const f=(c.fotos||[])[0];
     return `<button class="row" data-id="${esc(c.id)}">${f?mimg(c,f,200,'thumb','loading="lazy"'):`<div class="thumb">${t('noPhoto')}</div>`}
-    <div><h3>${esc(c.cliente||'—')} ${c.referencia?`<span class="chip ref">${esc(c.referencia)}</span>`:''} ${r.n>1?`<span class="chip rec">${t('nthClaim',r.pos)}</span>`:''}</h3>
+    <div><h3>${esc(c.cliente||'—')} ${c.referencia?`<span class="chip ref">${esc(c.referencia)}</span>`:''} ${r.n>1?`<span class="chip rec">${t('nthClaim',r.pos)}</span>`:''}${unread(c)?`<span class="chip new">${t('newB')}</span>`:''}</h3>
     <p>${esc(resumen(c)||t('noSummary'))}</p>
-    <div class="meta">${tipoChip(tipoOf(c))}${c.sintoma?`<span>${esc(L('sint',c.sintoma))}</span>`:''}${c.rollos?`<span>${t('rolls',+c.rollos)}${c.formato?t('ofM',c.formato):''}</span>`:''}${c.pedido?`<span>${t('order')} ${esc(c.pedido)}</span>`:''}${c.origen==='mail'?`<span>${t('fromMail')}</span>`:''}</div></div>
+    <div class="meta">${tipoChip(tipoOf(c))}${c.sintoma?`<span>${esc(L('sint',c.sintoma))}</span>`:''}${c.rollos?`<span>${t('rolls',+c.rollos)}${c.formato?t('ofM',c.formato):''}</span>`:''}${c.pedido?`<span>${t('order')} ${esc(c.pedido)}</span>`:''}${c.origen==='mail'?`<span>${t('fromMail')}</span>`:''}</div>${lastNote(c)?`<div class="meta" style="margin-top:4px">${t('lastNote')} (${fmtD(lastNote(c).t)}) : <b style="color:var(--ink)">${esc(lastNote(c).accion)}</b></div>`:''}</div>
     <div class="side">${stChip(c.estado)}<span class="meta">${fmtD(c.fechaReclamo)}</span>${c.enviadoProveedor?`<span class="meta">${t('sentSupplier')}</span>`:''}</div></button>`}).join('');
   document.querySelectorAll('.row').forEach(b=>b.onclick=()=>openDetail(b.dataset.id));
   hydrate($('#rows'));
@@ -553,7 +576,8 @@ $('#b-save-new').onclick=async()=>{
 };
 
 /* ============ detail ============ */
-function openDetail(id){openId=id;renderDetail();$('#scrim').hidden=false;$('#drawer').hidden=false}
+function openDetail(id){openId=id;renderDetail();$('#scrim').hidden=false;$('#drawer').hidden=false;
+  const c=CASOS.find(x=>x.id===id);if(c&&unread(c)){api('addNote',{id,kind:'lu'}).then(nc=>{const i=CASOS.findIndex(x=>x.id===id);if(i>=0)CASOS[i]=nc;renderList();if(openId===id)renderDetail(true)}).catch(()=>{})}}
 function closeDetail(){openId=null;$('#scrim').hidden=true;$('#drawer').hidden=true}
 $('#scrim').onclick=closeDetail;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#lb').hidden)$('#lb').hidden=true;else if(openId)closeDetail()}});
@@ -566,10 +590,15 @@ function renderDetail(soft){
   <div class="dbody">
    <div class="dsec"><h3>${t('photos')} (${(c.fotos||[]).length})</h3><div class="photos">${(c.fotos||[]).map(f=>mimg(c,f,1600,'','loading="lazy"')).join('')}</div>
      <div style="margin-top:8px"><button class="btn sm" id="d-add">${t('addFiles')}</button><input type="file" id="d-files" accept="image/*,application/pdf" multiple hidden></div></div>
+   <div class="dsec"><h3>${t('followUp')}</h3>
+     <div style="display:flex;gap:8px"><input class="inp" id="d-note" placeholder="${esc(t('notePh'))}"><button class="btn primary sm" id="d-addnote">${t('addNote')}</button></div>
+     <div class="quick">${t('quick').map(q=>`<button data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>
+     <ul class="tl">${timeline(c)}</ul>
+     <div class="idbox" style="margin-top:10px">${t('idHint')} <code>${esc(c.id)}</code><button class="btn ghost sm" id="d-copyid">${t('copyId')}</button></div></div>
    ${r.n>1?`<div class="falta"><b>${t('nClaimsRef',r.n,esc(c.referencia))}</b> ${r.list.map(x=>fmtD(x.fechaReclamo)).join(', ')}</div>`:''}
    ${(c.faltan||[]).length&&c.estado!=='clos'?`<div class="falta"><b>${t('missing')}</b> ${c.faltan.map(esc).join(', ')}</div>`:''}
    <div class="dsec"><h3>${t('techDiag')}</h3>${c.diagnostico?`<div class="diagbox"><p>${tipoChip(c.tipoFinal)} <span class="meta">${t('imputable')} : ${esc(L('imp',c.imputable))}</span></p><p style="font-size:16px;font-weight:700;margin-top:6px">${esc(c.diagnostico)}</p>${c.sugerencia?`<p class="note">${t('sugg')} : ${esc(c.sugerencia)}</p>`:''}<p class="meta">${c.fechaDiag?new Date(c.fechaDiag).toLocaleString(LANG==='fr'?'fr-FR':'en-GB'):''}</p></div>`:`<p class="note" style="margin:0">${t('noDiag')}</p>`}</div>
-   <div class="dsec"><h3>${t('caseData')}</h3><div style="display:grid;gap:10px" id="d-form">${formHTML(c,'d')}
+   <div class="dsec"><h3 style="display:flex;align-items:center;gap:10px">${t('caseData')} <button class="btn sm" id="d-reai">${t('relaunch')}</button><span class="aistate" id="d-reai-st"></span></h3><div style="display:grid;gap:10px" id="d-form">${formHTML(c,'d')}
      <div class="grid2"><div class="field"><label>${t('resolution')}</label><select class="inp" data-k="resolucion">${opts(['',...Object.keys(LABELS.res)],c.resolucion,k=>k?L('res',k):'—')}</select></div></div></div>
      <div style="margin-top:10px"><button class="btn primary sm" id="d-save">${t('saveChanges')}</button></div></div>
    <div class="dsec"><h3>${t('origMail')}</h3><pre class="orig">${esc(c.textoOriginal||'—')}</pre></div>
@@ -577,10 +606,18 @@ function renderDetail(soft){
      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center"><button class="btn sm" id="d-draft">${t('draftAI')}</button><button class="btn sm" id="d-copy">${t('copy')}</button><button class="btn sm" id="d-saveresp">${t('saveText')}</button><span class="aistate" id="d-aist"></span></div></div>
    ${others.length?`<div class="dsec"><h3>${t('otherClaims',esc(c.cliente))}</h3><div class="tablewrap"><table><tr><th>${t('date')}</th><th>${t('ref')}</th><th>${t('problemH')}</th><th>${t('status')}</th></tr>${others.map(o=>`<tr data-go="${esc(o.id)}" style="cursor:pointer"><td>${fmtD(o.fechaReclamo)}</td><td>${esc(o.referencia)}</td><td>${esc(resumen(o))}</td><td>${esc(L('est',o.estado))}</td></tr>`).join('')}</table></div></div>`:''}
    <div class="dsec"><h3>${t('backup')}</h3>${c.carpetaUrl?`<a class="btn sm" href="${esc(c.carpetaUrl)}" target="_blank" rel="noopener">${t('openDrive')}</a>`:''}</div>
-   <div class="dsec"><h3>${t('history')}</h3><ul class="hist">${histTxt(c)}</ul>${c.enviadoProveedor?`<p class="note">${t('sentOn',fmtD(c.enviadoProveedor))}</p>`:''}</div>
+   ${c.enviadoProveedor?`<p class="note">${t('sentOn',fmtD(c.enviadoProveedor))}</p>`:''}
   </div>`;
   hydrate(d);
   $('#d-close').onclick=closeDetail;
+  const addNote=async()=>{const v=$('#d-note').value.trim();if(!v)return;$('#d-addnote').disabled=true;
+    try{const nc=await api('addNote',{id:c.id,text:v});const i=CASOS.findIndex(x=>x.id===c.id);CASOS[i]=nc;document.activeElement.blur();renderDetail();renderList();toast(t('noteAdded'))}catch(_){toast(t('errSave'));$('#d-addnote').disabled=false}};
+  $('#d-addnote').onclick=addNote;$('#d-note').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addNote()}};
+  d.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{$('#d-note').value=b.dataset.q+' ';$('#d-note').focus()});
+  $('#d-copyid').onclick=async()=>{try{await navigator.clipboard.writeText(c.id);toast(t('copied'))}catch(_){}};
+  $('#d-reai').onclick=async()=>{const b=$('#d-reai');b.disabled=true;$('#d-reai-st').innerHTML=`<i class="spin"></i> ${t('relaunching')}`;
+    try{const nc=await api('reanalyze',{id:c.id});const i=CASOS.findIndex(x=>x.id===c.id);CASOS[i]=nc;document.activeElement.blur();renderDetail();renderAll();toast(t('relaunched'))}
+    catch(e){$('#d-reai-st').textContent=t('aiFail')+' ('+e.message+')';b.disabled=false}};
   d.querySelectorAll('.photos img').forEach(i=>i.onclick=()=>i.src&&lightbox(i.src));
   d.querySelectorAll('[data-go]').forEach(tr=>tr.onclick=()=>openDetail(tr.dataset.go));
   $('#d-save').onclick=async()=>{const v=readForm($('#d-form'));const ch=[];if(v.estado!==c.estado)ch.push('Statut : '+L('est',v.estado));if(v.resolucion&&v.resolucion!==c.resolucion)ch.push('Résolution : '+L('res',v.resolucion));
