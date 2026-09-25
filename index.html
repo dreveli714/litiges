@@ -135,10 +135,21 @@ th{font-weight:700;color:var(--muted);font-size:13px}
 
 .scrim{position:fixed;inset:0;background:rgba(10,18,22,.45);z-index:40}
 .scrim[hidden],.drawer[hidden],.modal[hidden],.lightbox[hidden],.toast[hidden]{display:none}
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(760px,100%);background:var(--surface);z-index:41;overflow-y:auto;box-shadow:-10px 0 40px rgba(0,0,0,.2);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.drawer{position:fixed;top:max(2vh,env(safe-area-inset-top,0px));bottom:2vh;left:50%;transform:translateX(-50%);width:min(1280px,96vw);border-radius:18px;background:var(--surface);z-index:41;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 .dhead{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--line);padding:14px 20px;display:flex;gap:10px;align-items:center;z-index:2}
 .dhead h2{margin:0;font-size:19px;flex:1;font-weight:800}
 .dbody{padding:20px;display:grid;gap:22px}
+.dcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+.dcol{display:grid;gap:22px;align-content:start}
+@media (max-width:900px){.dcols{grid-template-columns:1fr}.drawer{top:0;bottom:0;width:100%;border-radius:0}}
+.drawer .photos{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+.subj{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px;margin-top:2px}
+.subj b{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:2px 9px;font-weight:700}
+.row .subjl{font-size:13px;color:var(--muted);margin:0 0 4px}
+.seg{display:flex;background:var(--paper);padding:3px;border-radius:12px;gap:2px}
+.seg button{border:0;background:none;padding:6px 14px;border-radius:10px;font-weight:700;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.donebox{background:var(--ok-soft);color:var(--ok);border-radius:10px;padding:8px 12px;font-size:14px;font-weight:700}
 .dsec h3{font-size:14px;margin:0 0 8px;color:var(--muted);font-weight:700}
 .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
 .photos img{aspect-ratio:1;object-fit:cover;border-radius:10px;cursor:zoom-in;width:100%;background:var(--glass-soft)}
@@ -241,7 +252,7 @@ th{font-weight:700;color:var(--muted);font-size:13px}
 
   <section class="view" id="v-tecnico" hidden>
     <div class="feed" id="feed">
-      <div class="feed-top"><strong id="feed-title"></strong><div class="spacer"></div><span class="hint" data-t="techHint"></span></div>
+      <div class="feed-top"><div class="seg"><button id="tm-todo" aria-pressed="true" data-t="techTodo"></button><button id="tm-done" aria-pressed="false" data-t="techDone"></button></div><strong id="feed-title"></strong><div class="spacer"></div><span class="hint" data-t="techHint"></span></div>
       <div id="feed-cards"></div>
     </div>
   </section>
@@ -327,6 +338,7 @@ const I18N={
   pdf:'PDF',followUp:'Suivi du dossier',notePh:'Ajouter une note : où en est le dossier ?',addNote:'Ajouter',noteAdded:'Note ajoutée',newB:'Nouveau',
   relaunch:'Relancer l’IA',relaunching:'Analyse en cours…',relaunched:'Champs complétés par l’IA',lastNote:'Dernier suivi',
   idHint:'Pour rattacher un nouveau mail à ce dossier, mettez ce code dans l’objet lors du transfert :',copyId:'Copier le code',
+  subject:'Objet du mail',copySubj:'Copier l’objet',techTodo:'À diagnostiquer',techDone:'Diagnostiqués',update:'Mettre à jour',movedDone:'Enregistré : le dossier est dans « Diagnostiqués »',diagOn:d=>'Diagnostiqué le '+d,doneN:n=>`${n} dossier${n>1?'s':''} diagnostiqué${n>1?'s':''}`,nothingDone:'Aucun dossier diagnostiqué',nothingDoneHint:'Les dossiers apparaissent ici après le diagnostic.',
   quick:['Client relancé','Photos demandées','Photos reçues','Échantillon demandé','Échantillon reçu','Transmis au technicien','Transmis au fournisseur','Réponse envoyée au client','Avoir émis','Remplacement expédié','Réclamation refusée']},
  en:{tabCases:'Cases',tabTech:'Technician',tabStats:'Statistics and supplier',refresh:'Refresh',catalog:'Catalogue',newClaim:'+ New claim',
   search:'Search',client:'Customer',ref:'Reference',type:'Type',status:'Status',from:'From',to:'To',clear:'Clear filters',exportList:'Export list (Excel)',
@@ -354,6 +366,7 @@ const I18N={
   pdf:'PDF',followUp:'Case follow-up',notePh:'Add a note: where does the case stand?',addNote:'Add',noteAdded:'Note added',newB:'New',
   relaunch:'Run AI again',relaunching:'Analysing…',relaunched:'Fields filled in by AI',lastNote:'Last update',
   idHint:'To attach a new email to this case, put this code in the subject when forwarding:',copyId:'Copy code',
+  subject:'Email subject',copySubj:'Copy subject',techTodo:'To diagnose',techDone:'Diagnosed',update:'Update',movedDone:'Saved: the case is now under “Diagnosed”',diagOn:d=>'Diagnosed on '+d,doneN:n=>`${n} diagnosed case${n>1?'s':''}`,nothingDone:'No diagnosed cases',nothingDoneHint:'Cases show up here once diagnosed.',
   quick:['Customer chased','Photos requested','Photos received','Sample requested','Sample received','Sent to technician','Sent to supplier','Reply sent to customer','Credit note issued','Replacement shipped','Claim rejected']}
 };
 const LABELS={
@@ -407,6 +420,7 @@ async function pdfFirstPage(blob){
   return await new Promise(r=>cv.toBlob(r,'image/jpeg',.85));
 }
 function download(filename,data,mime){const b=data instanceof Blob?data:new Blob([data],{type:mime||'application/octet-stream'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
+function subjectOf(c){const m=String(c.textoOriginal||'').match(/^(?:Objet|Subject|Asunto|Oggetto|Assunto|Betreff)\s*:\s*(.+)$/im);return m?m[1].replace(/^\s*((re|tr|fw|fwd|rv|aw|wg|r)\s*:\s*)+/i,'').trim():''}
 function unread(c){const H=c.historial||[];let lastNew=-1,lastLu=-1;H.forEach((e,i)=>{if(e.kind==='new'||e.kind==='mail')lastNew=i;if(e.kind==='lu')lastLu=i});return lastNew>lastLu}
 function lastNote(c){const n=(c.historial||[]).filter(e=>e.kind==='note');return n.length?n[n.length-1]:null}
 function timeline(c){return (c.historial||[]).slice().reverse().map(e=>{const cls=e.kind==='note'?'note':(e.kind==='mail'||e.kind==='new')?'mail':e.kind==='lu'?'lu':'sys';
@@ -503,7 +517,7 @@ function renderList(){
   $('#rows').innerHTML=list.map(c=>{const r=recInfo(c);const f=(c.fotos||[])[0];
     return `<button class="row" data-id="${esc(c.id)}">${f?mimg(c,f,200,'thumb','loading="lazy"'):`<div class="thumb">${t('noPhoto')}</div>`}
     <div><h3>${esc(c.cliente||'—')} ${c.referencia?`<span class="chip ref">${esc(c.referencia)}</span>`:''} ${r.n>1?`<span class="chip rec">${t('nthClaim',r.pos)}</span>`:''}${unread(c)?`<span class="chip new">${t('newB')}</span>`:''}</h3>
-    <p>${esc(resumen(c)||t('noSummary'))}</p>
+    ${subjectOf(c)?`<p class="subjl">✉ ${esc(subjectOf(c))}</p>`:''}<p>${esc(resumen(c)||t('noSummary'))}</p>
     <div class="meta">${tipoChip(tipoOf(c))}${c.sintoma?`<span>${esc(L('sint',c.sintoma))}</span>`:''}${c.rollos?`<span>${t('rolls',+c.rollos)}${c.formato?t('ofM',c.formato):''}</span>`:''}${c.pedido?`<span>${t('order')} ${esc(c.pedido)}</span>`:''}${c.origen==='mail'?`<span>${t('fromMail')}</span>`:''}</div>${lastNote(c)?`<div class="meta" style="margin-top:4px">${t('lastNote')} (${fmtD(lastNote(c).t)}) : <b style="color:var(--ink)">${esc(lastNote(c).accion)}</b></div>`:''}</div>
     <div class="side">${stChip(c.estado)}<span class="meta">${fmtD(c.fechaReclamo)}</span>${c.enviadoProveedor?`<span class="meta">${t('sentSupplier')}</span>`:''}</div></button>`}).join('');
   document.querySelectorAll('.row').forEach(b=>b.onclick=()=>openDetail(b.dataset.id));
@@ -586,8 +600,11 @@ function renderDetail(soft){
   const c=CASOS.find(x=>x.id===openId);const d=$('#drawer');if(!c){closeDetail();return}
   if(soft&&d.contains(document.activeElement))return;
   const r=recInfo(c);const others=CASOS.filter(x=>x.id!==c.id&&norm(x.cliente)===norm(c.cliente)).sort((a,b)=>String(b.fechaReclamo).localeCompare(String(a.fechaReclamo)));
-  d.innerHTML=`<div class="dhead"><h2>${esc(c.cliente)} <span class="chip ref">${esc(c.referencia||'—')}</span></h2><span class="meta">${esc(c.id)}</span><button class="btn ghost" id="d-close">${t('close')}</button></div>
-  <div class="dbody">
+  const subj=subjectOf(c);
+  d.innerHTML=`<div class="dhead"><div style="flex:1;min-width:0"><h2>${esc(c.cliente)} <span class="chip ref">${esc(c.referencia||'—')}</span> ${stChip(c.estado)}</h2>
+    ${subj?`<div class="subj">${t('subject')} : <b>${esc(subj)}</b><button class="btn ghost sm" id="d-copysubj">${t('copySubj')}</button></div>`:''}</div>
+    <span class="meta">${esc(c.id)}</span><button class="btn ghost" id="d-close">${t('close')}</button></div>
+  <div class="dbody"><div class="dcols"><div class="dcol">
    <div class="dsec"><h3>${t('photos')} (${(c.fotos||[]).length})</h3><div class="photos">${(c.fotos||[]).map(f=>mimg(c,f,1600,'','loading="lazy"')).join('')}</div>
      <div style="margin-top:8px"><button class="btn sm" id="d-add">${t('addFiles')}</button><input type="file" id="d-files" accept="image/*,application/pdf" multiple hidden></div></div>
    <div class="dsec"><h3>${t('followUp')}</h3>
@@ -598,6 +615,7 @@ function renderDetail(soft){
    ${r.n>1?`<div class="falta"><b>${t('nClaimsRef',r.n,esc(c.referencia))}</b> ${r.list.map(x=>fmtD(x.fechaReclamo)).join(', ')}</div>`:''}
    ${(c.faltan||[]).length&&c.estado!=='clos'?`<div class="falta"><b>${t('missing')}</b> ${c.faltan.map(esc).join(', ')}</div>`:''}
    <div class="dsec"><h3>${t('techDiag')}</h3>${c.diagnostico?`<div class="diagbox"><p>${tipoChip(c.tipoFinal)} <span class="meta">${t('imputable')} : ${esc(L('imp',c.imputable))}</span></p><p style="font-size:16px;font-weight:700;margin-top:6px">${esc(c.diagnostico)}</p>${c.sugerencia?`<p class="note">${t('sugg')} : ${esc(c.sugerencia)}</p>`:''}<p class="meta">${c.fechaDiag?new Date(c.fechaDiag).toLocaleString(LANG==='fr'?'fr-FR':'en-GB'):''}</p></div>`:`<p class="note" style="margin:0">${t('noDiag')}</p>`}</div>
+   </div><div class="dcol">
    <div class="dsec"><h3 style="display:flex;align-items:center;gap:10px">${t('caseData')} <button class="btn sm" id="d-reai">${t('relaunch')}</button><span class="aistate" id="d-reai-st"></span></h3><div style="display:grid;gap:10px" id="d-form">${formHTML(c,'d')}
      <div class="grid2"><div class="field"><label>${t('resolution')}</label><select class="inp" data-k="resolucion">${opts(['',...Object.keys(LABELS.res)],c.resolucion,k=>k?L('res',k):'—')}</select></div></div></div>
      <div style="margin-top:10px"><button class="btn primary sm" id="d-save">${t('saveChanges')}</button></div></div>
@@ -607,9 +625,10 @@ function renderDetail(soft){
    ${others.length?`<div class="dsec"><h3>${t('otherClaims',esc(c.cliente))}</h3><div class="tablewrap"><table><tr><th>${t('date')}</th><th>${t('ref')}</th><th>${t('problemH')}</th><th>${t('status')}</th></tr>${others.map(o=>`<tr data-go="${esc(o.id)}" style="cursor:pointer"><td>${fmtD(o.fechaReclamo)}</td><td>${esc(o.referencia)}</td><td>${esc(resumen(o))}</td><td>${esc(L('est',o.estado))}</td></tr>`).join('')}</table></div></div>`:''}
    <div class="dsec"><h3>${t('backup')}</h3>${c.carpetaUrl?`<a class="btn sm" href="${esc(c.carpetaUrl)}" target="_blank" rel="noopener">${t('openDrive')}</a>`:''}</div>
    ${c.enviadoProveedor?`<p class="note">${t('sentOn',fmtD(c.enviadoProveedor))}</p>`:''}
-  </div>`;
+  </div></div></div>`;
   hydrate(d);
   $('#d-close').onclick=closeDetail;
+  if($('#d-copysubj'))$('#d-copysubj').onclick=async()=>{try{await navigator.clipboard.writeText(subj);toast(t('copied'))}catch(_){}};
   const addNote=async()=>{const v=$('#d-note').value.trim();if(!v)return;$('#d-addnote').disabled=true;
     try{const nc=await api('addNote',{id:c.id,text:v});const i=CASOS.findIndex(x=>x.id===c.id);CASOS[i]=nc;document.activeElement.blur();renderDetail();renderList();toast(t('noteAdded'))}catch(_){toast(t('errSave'));$('#d-addnote').disabled=false}};
   $('#d-addnote').onclick=addNote;$('#d-note').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addNote()}};
@@ -635,17 +654,22 @@ $('#lb').onclick=()=>$('#lb').hidden=true;
 
 /* ============ technician ============ */
 const pendientes=()=>CASOS.filter(c=>c.estado==='analyse').sort((a,b)=>String(a.creado).localeCompare(String(b.creado)));
+const diagnosed=()=>CASOS.filter(c=>c.diagnostico&&c.estado!=='analyse').sort((a,b)=>String(b.fechaDiag).localeCompare(String(a.fechaDiag)));
+let techMode='todo';
+function setTechMode(m){techMode=m;techDraft={};$('#tm-todo').setAttribute('aria-pressed',m==='todo');$('#tm-done').setAttribute('aria-pressed',m==='done');$('#feed-cards').innerHTML='';$('#feed').scrollTop=0;renderTech(true)}
+$('#tm-todo').onclick=()=>setTechMode('todo');$('#tm-done').onclick=()=>setTechMode('done');
 function updatePendBadge(){const n=pendientes().length;$('#n-pend').textContent=n;$('#n-pend').hidden=!n}
 function techCardHTML(c){
-  const dr=techDraft[c.id]||(techDraft[c.id]={tipo:c.tipoFinal||c.tipoProv||'pendiente',diag:'',sug:'',foto:0});const f=c.fotos||[];
+  const dr=techDraft[c.id]||(techDraft[c.id]={tipo:c.tipoFinal||c.tipoProv||'pendiente',diag:techMode==='done'?(c.diagnostico||''):'',sug:techMode==='done'?(c.sugerencia||''):'',foto:0});const f=c.fotos||[];
   return `<div class="tphoto">${f.length?`<span class="tcounter">${dr.foto+1} / ${f.length}</span><div class="big">${mimg(c,f[dr.foto]||f[0],1600)}</div>
     ${f.length>1?`<div class="tstrip">${f.map((id,i)=>mimg(c,id,200,i===dr.foto?'on':'',`data-i="${i}"`)).join('')}</div>`:''}`:`<div class="big"><div class="noimg">${t('noPhoto')}</div></div>`}</div>
   <div class="tinfo"><div><p class="who">${esc(c.cliente)}</p><div class="meta" style="margin-top:6px">${c.referencia?`<span class="chip ref">${esc(c.referencia)}</span>`:''}${c.rollos?`<span>${t('rolls',+c.rollos)}${c.formato?t('ofM',c.formato):''}</span>`:''}${c.sintoma?`<span>${esc(L('sint',c.sintoma))}</span>`:''}<span>${fmtD(c.fechaReclamo)}</span></div></div>
    <p class="sum">${esc(resumen(c)||t('noSummary'))}</p>
+   ${techMode==='done'&&c.fechaDiag?`<div class="donebox">✓ ${t('diagOn',fmtD(String(c.fechaDiag).slice(0,10)))} · ${esc(L('est',c.estado))}</div>`:''}
    <div><div class="hint" style="margin-bottom:5px">${t('cause')}</div><div class="tipos">${TIPOS.map(k=>`<button class="tipo" data-tp="${k}" aria-pressed="${dr.tipo===k}"><i class="dot" style="background:var(${TCOL[k]})"></i>${esc(L('tipo',k))}</button>`).join('')}</div></div>
    <input class="diag" data-f="diag" placeholder="${esc(t('diagPh'))}" value="${esc(dr.diag)}">
    <input class="inp" data-f="sug" placeholder="${esc(t('sugPh'))}" value="${esc(dr.sug)}">
-   <div class="tactions"><button class="btn primary" data-a="save">${t('saveNext')}</button><button class="btn" data-a="info">${t('askInfo')}</button><button class="btn ghost" data-a="det">${t('details')}</button></div></div>`;
+   <div class="tactions"><button class="btn primary" data-a="save">${techMode==='done'?t('update'):t('saveNext')}</button>${techMode==='todo'?`<button class="btn" data-a="info">${t('askInfo')}</button>`:''}<button class="btn ghost" data-a="det">${t('details')}</button></div></div>`;
 }
 function bindTechCard(el,c){
   const dr=techDraft[c.id];hydrate(el);
@@ -655,28 +679,29 @@ function bindTechCard(el,c){
   el.querySelectorAll('[data-f]').forEach(i=>{i.oninput=()=>dr[i.dataset.f]=i.value;i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();saveTech(c,el)}}});
   el.querySelector('[data-a="save"]').onclick=()=>saveTech(c,el);
   el.querySelector('[data-a="det"]').onclick=()=>openDetail(c.id);
-  el.querySelector('[data-a="info"]').onclick=async()=>{try{await update(c.id,{estado:'attente'},'Le technicien demande plus d’infos'+(dr.sug?' : '+dr.sug:''));toast(t('movedWait'))}catch(_){toast(t('errSave'))}};
+  if(el.querySelector('[data-a="info"]'))el.querySelector('[data-a="info"]').onclick=async()=>{try{await update(c.id,{estado:'attente'},'Le technicien demande plus d’infos'+(dr.sug?' : '+dr.sug:''));toast(t('movedWait'))}catch(_){toast(t('errSave'))}};
 }
 async function saveTech(c,el){
   const dr=techDraft[c.id];if(!dr.diag.trim()){el.querySelector('[data-f="diag"]').focus();toast(t('writeDiag'));return}
   const next=el.nextElementSibling;
   try{
     document.activeElement.blur();
-    await update(c.id,{tipoFinal:dr.tipo,imputable:IMP[dr.tipo],diagnostico:dr.diag.trim(),sugerencia:dr.sug.trim(),fechaDiag:new Date().toISOString(),estado:'diagnostique'},'Diagnostic : '+dr.diag.trim());
-    delete techDraft[c.id];toast(t('saved'));
+    const wasDone=!!c.diagnostico&&c.estado!=='analyse';
+    await update(c.id,{tipoFinal:dr.tipo,imputable:IMP[dr.tipo],diagnostico:dr.diag.trim(),sugerencia:dr.sug.trim(),fechaDiag:new Date().toISOString(),estado:c.estado==='analyse'?'diagnostique':c.estado},(wasDone?'Diagnostic modifié : ':'Diagnostic : ')+dr.diag.trim());
+    delete techDraft[c.id];toast(techMode==='todo'?t('movedDone'):t('saved'));if(techMode==='done')return;
     if(next&&next.isConnected){next.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>next.querySelector('[data-f="diag"]')?.focus({preventScroll:true}),450)}
   }catch(_){toast(t('errSave'))}
 }
 function renderTech(force){
-  const wrap=$('#feed-cards');const list=pendientes();
-  $('#feed-title').textContent=list.length?t('pendingN',list.length):t('pendingT');
-  if(!list.length){wrap.innerHTML=`<div style="padding:40px 20px"><div class="empty-state"><strong>${t('nothing')}</strong>${t('nothingHint')}</div></div>`;return}
+  const wrap=$('#feed-cards');const done=techMode==='done';const list=done?diagnosed():pendientes();
+  $('#feed-title').textContent=done?t('doneN',list.length):(list.length?t('pendingN',list.length):t('pendingT'));
+  if(!list.length){wrap.innerHTML=`<div style="padding:40px 20px"><div class="empty-state"><strong>${done?t('nothingDone'):t('nothing')}</strong>${done?t('nothingDoneHint'):t('nothingHint')}</div></div>`;return}
   if(wrap.querySelector('.empty-state'))wrap.innerHTML='';
   const ids=new Set(list.map(c=>c.id));
   wrap.querySelectorAll('.tcard').forEach(el=>{if(!ids.has(el.dataset.id))el.remove()});
   list.forEach((c,idx)=>{
     let el=[...wrap.children].find(x=>x.dataset.id===c.id);
-    const sig=JSON.stringify([c.fotos,c.resumeFr,c.resumeEn,c.cliente,c.referencia,c.rollos,c.formato,c.sintoma,LANG]);
+    const sig=JSON.stringify([c.fotos,c.resumeFr,c.resumeEn,c.cliente,c.referencia,c.rollos,c.formato,c.sintoma,LANG,techMode,c.diagnostico,c.estado]);
     if(!el){el=document.createElement('article');el.className='tcard';el.dataset.id=c.id}
     if((force||el.dataset.sig!==sig)&&!el.contains(document.activeElement)){el.dataset.sig=sig;el.innerHTML=techCardHTML(c);bindTechCard(el,c)}
     const at=wrap.children[idx];if(at!==el)wrap.insertBefore(el,at||null);
