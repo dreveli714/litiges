@@ -78,6 +78,9 @@ textarea.inp{resize:vertical;min-height:80px}
 .row:hover{border-color:var(--glass)}
 .thumb{width:76px;height:76px;border-radius:12px;object-fit:cover;background:var(--glass-soft)}
 div.thumb{display:grid;place-items:center;color:var(--muted);font-size:11px}
+.row>.rbody{grid-column:2;min-width:0}
+.row>.side{grid-column:3}
+@media (max-width:600px){.row>.side{grid-column:1/-1}}
 .row h3{margin:0;font-size:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:800}
 .row p{margin:3px 0 6px}
 .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted)}
@@ -473,7 +476,13 @@ function getMedia(caseId,fid,size){
 }
 function loadImg(img){
   getMedia(img.dataset.case,img.dataset.fid,+img.dataset.size||0).then(u=>{
-    if(u==='GONE'){(img.closest('.ph')||img).remove();return}
+    if(u==='GONE'){
+      const ph=img.closest('.ph');
+      if(ph)ph.remove();
+      else if(img.classList.contains('thumb')){const d=document.createElement('div');d.className='thumb';d.textContent=t('noPhoto');img.replaceWith(d)}
+      else{const d=document.createElement('div');d.className='noimg';d.textContent=t('noPhoto');img.replaceWith(d)}
+      clearTimeout(window._rl);window._rl=setTimeout(()=>{renderList();if(!$('#v-tecnico').hidden)renderTech(true)},400);
+      return}
     if(u)img.src=u;else img.alt=t('pdf')}).catch(()=>{img.alt='×'});
 }
 const IO=('IntersectionObserver' in window)?new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){IO.unobserve(e.target);loadImg(e.target)}}),{rootMargin:'700px 0px'}):null;
@@ -534,7 +543,7 @@ function renderList(){
   if(!list.length){$('#rows').innerHTML=`<div class="empty-state"><strong>${t('noMatch')}</strong>${t('noMatchHint')}</div>`;return}
   $('#rows').innerHTML=list.map(c=>{const r=recInfo(c);const f=(c.fotos||[])[0];
     return `<button class="row" data-id="${esc(c.id)}">${f?mimg(c,f,200,'thumb','loading="lazy"'):`<div class="thumb">${t('noPhoto')}</div>`}
-    <div><h3>${esc(c.cliente||'—')} ${c.referencia?`<span class="chip ref">${esc(c.referencia)}</span>`:''} ${r.n>1?`<span class="chip rec">${t('nthClaim',r.pos)}</span>`:''}${unread(c)?`<span class="chip new">${t('newB')}</span>`:''}</h3>
+    <div class="rbody"><h3>${esc(c.cliente||'—')} ${c.referencia?`<span class="chip ref">${esc(c.referencia)}</span>`:''} ${r.n>1?`<span class="chip rec">${t('nthClaim',r.pos)}</span>`:''}${unread(c)?`<span class="chip new">${t('newB')}</span>`:''}</h3>
     ${subjectOf(c)?`<p class="subjl">✉ ${esc(subjectOf(c))}</p>`:''}<p>${esc(resumen(c)||t('noSummary'))}</p>
     <div class="meta">${tipoChip(tipoOf(c))}${c.sintoma?`<span>${esc(L('sint',c.sintoma))}</span>`:''}${c.rollos?`<span>${t('rolls',+c.rollos)}${c.formato?t('ofM',c.formato):''}</span>`:''}${c.pedido?`<span>${t('order')} ${esc(c.pedido)}</span>`:''}${c.origen==='mail'?`<span>${t('fromMail')}</span>`:''}</div>${lastNote(c)?`<div class="meta" style="margin-top:4px">${t('lastNote')} (${fmtD(lastNote(c).t)}) : <b style="color:var(--ink)">${esc(lastNote(c).accion)}</b></div>`:''}</div>
     <div class="side">${stChip(c.estado)}<span class="meta">${fmtD(c.fechaReclamo)}</span>${c.enviadoProveedor?`<span class="meta">${t('sentSupplier')}</span>`:''}</div></button>`}).join('');
