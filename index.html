@@ -138,8 +138,8 @@ th{font-weight:700;color:var(--muted);font-size:13px}
 .legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
 .note{font-size:13px;color:var(--muted)}
 .okmsg{background:var(--ok-soft);color:var(--ok);padding:10px 12px;border-radius:12px;font-size:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 @media (max-width:560px){.grid2,.grid3{grid-template-columns:1fr}}
 
 .scrim{position:fixed;inset:0;background:rgba(10,18,22,.45);z-index:40}
@@ -169,7 +169,9 @@ th{font-weight:700;color:var(--muted);font-size:13px}
 .ph .bar2 button{border:0;border-radius:8px;padding:4px 8px;font-size:12.5px;font-weight:800;cursor:pointer;background:rgba(255,255,255,.92);color:#18262C}
 .ph .bar2 button.del{background:var(--litige);color:#fff}
 .ph .bar2 button:disabled{opacity:.5}
-.orig{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:14px;max-height:280px;overflow:auto;margin:0;font-family:var(--f)}
+.orig{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;font-size:14.5px;line-height:1.55;min-height:260px;max-height:75vh;overflow:auto;resize:vertical;margin:0;font-family:var(--f)}
+.ohead{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ohead h3{margin:0!important}
 .diagbox{border-left:4px solid var(--glass);background:var(--glass-soft);padding:12px 14px;border-radius:0 12px 12px 0}
 .diagbox p{margin:2px 0}
 .hist{font-size:13px;color:var(--muted);margin:0;padding-left:16px}
@@ -355,6 +357,7 @@ const I18N={
   pdf:'PDF',followUp:'Suivi du dossier',notePh:'Ajouter une note : où en est le dossier ?',addNote:'Ajouter',noteAdded:'Note ajoutée',newB:'Nouveau',
   relaunch:'Relancer l’IA',relaunching:'Analyse en cours…',relaunched:'Champs complétés par l’IA',lastNote:'Dernier suivi',
   idHint:'Pour rattacher un nouveau mail à ce dossier, mettez ce code dans l’objet lors du transfert :',copyId:'Copier le code',
+  copyMail:'Copier tout le mail',showAll:n=>`Voir tout l’historique (${n})`,hideAll:'Masquer l’historique',
   sortDesc:'Date de réclamation : récentes d’abord',sortAsc:'Date de réclamation : anciennes d’abord',sortAdded:'Date d’ajout dans l’app',
   mainT:'Principale',setMain:'Principale',mainSet:'Photo principale modifiée',
   removeQ:'Retirer ce fichier du dossier ?\n\nIl ira dans la corbeille de Drive. Si c’est un logo ou une signature, il sera ignoré automatiquement dans les prochains mails.',removed:'Fichier retiré',removeT:'Retirer',caseN:(i,n)=>`Dossier ${i} sur ${n}`,
@@ -386,6 +389,7 @@ const I18N={
   pdf:'PDF',followUp:'Case follow-up',notePh:'Add a note: where does the case stand?',addNote:'Add',noteAdded:'Note added',newB:'New',
   relaunch:'Run AI again',relaunching:'Analysing…',relaunched:'Fields filled in by AI',lastNote:'Last update',
   idHint:'To attach a new email to this case, put this code in the subject when forwarding:',copyId:'Copy code',
+  copyMail:'Copy the whole email',showAll:n=>`Show full history (${n})`,hideAll:'Hide history',
   sortDesc:'Claim date: newest first',sortAsc:'Claim date: oldest first',sortAdded:'Date added to the app',
   mainT:'Main',setMain:'Main',mainSet:'Main photo updated',
   removeQ:'Remove this file from the case?\n\nIt will go to the Drive bin. If it is a logo or signature, it will be ignored automatically in future emails.',removed:'File removed',removeT:'Remove',caseN:(i,n)=>`Case ${i} of ${n}`,
@@ -446,7 +450,9 @@ function download(filename,data,mime){const b=data instanceof Blob?data:new Blob
 function subjectOf(c){const m=String(c.textoOriginal||'').match(/^(?:Objet|Subject|Asunto|Oggetto|Assunto|Betreff)\s*:\s*(.+)$/im);return m?m[1].replace(/^\s*((re|tr|fw|fwd|rv|aw|wg|r)\s*:\s*)+/i,'').trim():''}
 function unread(c){const H=c.historial||[];let lastNew=-1,lastLu=-1;H.forEach((e,i)=>{if(e.kind==='new'||e.kind==='mail')lastNew=i;if(e.kind==='lu')lastLu=i});return lastNew>lastLu}
 function lastNote(c){const n=(c.historial||[]).filter(e=>e.kind==='note');return n.length?n[n.length-1]:null}
-function timeline(c){return (c.historial||[]).slice().reverse().map(e=>{const cls=e.kind==='note'?'note':(e.kind==='mail'||e.kind==='new')?'mail':e.kind==='lu'?'lu':'sys';
+const KEY_KINDS=['note','mail','new'];
+let showFullHist=false;
+function timeline(c,full){return (c.historial||[]).filter(e=>full||KEY_KINDS.includes(e.kind)).slice().reverse().map(e=>{const cls=e.kind==='note'?'note':(e.kind==='mail'||e.kind==='new')?'mail':e.kind==='lu'?'lu':'sys';
   return `<li class="${cls}"><time>${new Date(e.t).toLocaleString(LANG==='fr'?'fr-FR':'en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</time><span>${esc(e.accion)}</span></li>`}).join('')}
 function histTxt(c){return (c.historial||[]).slice().reverse().map(h=>`<li>${new Date(h.t).toLocaleString(LANG==='fr'?'fr-FR':'en-GB')} : ${esc(h.accion)}</li>`).join('')}
 
@@ -671,7 +677,8 @@ function renderDetail(soft){
    <div class="dsec"><h3>${t('followUp')}</h3>
      <div style="display:flex;gap:8px"><input class="inp" id="d-note" placeholder="${esc(t('notePh'))}"><button class="btn primary sm" id="d-addnote">${t('addNote')}</button></div>
      <div class="quick">${t('quick').map(q=>`<button data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>
-     <ul class="tl">${timeline(c)}</ul>
+     <ul class="tl">${timeline(c,showFullHist)}</ul>
+     ${(c.historial||[]).some(e=>!KEY_KINDS.includes(e.kind))?`<button class="btn ghost sm" id="d-hist" style="margin-top:4px">${showFullHist?t('hideAll'):t('showAll',(c.historial||[]).length)}</button>`:''}
      <div class="idbox" style="margin-top:10px">${t('idHint')} <code>${esc(c.id)}</code><button class="btn ghost sm" id="d-copyid">${t('copyId')}</button></div></div>
    ${r.n>1?`<div class="falta"><b>${t('nClaimsRef',r.n,esc(c.referencia))}</b> ${r.list.map(x=>fmtD(x.fechaReclamo)).join(', ')}</div>`:''}
    ${(c.faltan||[]).length&&c.estado!=='clos'?`<div class="falta"><b>${t('missing')}</b> ${c.faltan.map(esc).join(', ')}</div>`:''}
@@ -680,19 +687,22 @@ function renderDetail(soft){
    <div class="dsec"><h3 style="display:flex;align-items:center;gap:10px">${t('caseData')} <button class="btn sm" id="d-reai">${t('relaunch')}</button><span class="aistate" id="d-reai-st"></span></h3><div style="display:grid;gap:10px" id="d-form">${formHTML(c,'d')}
      <div class="grid2"><div class="field"><label>${t('resolution')}</label><select class="inp" data-k="resolucion">${opts(['',...Object.keys(LABELS.res)],c.resolucion,k=>k?L('res',k):'—')}</select></div></div></div>
      <div style="margin-top:10px"><button class="btn primary sm" id="d-save">${t('saveChanges')}</button></div></div>
-   <div class="dsec"><h3>${t('origMail')}</h3><pre class="orig">${esc(c.textoOriginal||'—')}</pre></div>
    <div class="dsec"><h3>${t('reply',L('lng',c.idioma||'fr'))}</h3><textarea class="inp" id="d-resp" style="min-height:150px" placeholder="${esc(t('replyPh'))}">${esc(c.respuestaDraft||'')}</textarea>
      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center"><button class="btn sm" id="d-draft">${t('draftAI')}</button><button class="btn sm" id="d-copy">${t('copy')}</button><button class="btn sm" id="d-saveresp">${t('saveText')}</button><span class="aistate" id="d-aist"></span></div></div>
    ${others.length?`<div class="dsec"><h3>${t('otherClaims',esc(c.cliente))}</h3><div class="tablewrap"><table><tr><th>${t('date')}</th><th>${t('ref')}</th><th>${t('problemH')}</th><th>${t('status')}</th></tr>${others.map(o=>`<tr data-go="${esc(o.id)}" style="cursor:pointer"><td>${fmtD(o.fechaReclamo)}</td><td>${esc(o.referencia)}</td><td>${esc(resumen(o))}</td><td>${esc(L('est',o.estado))}</td></tr>`).join('')}</table></div></div>`:''}
    <div class="dsec"><h3>${t('backup')}</h3>${c.carpetaUrl?`<a class="btn sm" href="${esc(c.carpetaUrl)}" target="_blank" rel="noopener">${t('openDrive')}</a>`:''}</div>
    ${c.enviadoProveedor?`<p class="note">${t('sentOn',fmtD(c.enviadoProveedor))}</p>`:''}
-  </div></div></div>`;
+  </div></div>
+  <div class="dsec"><div class="ohead"><h3>${t('origMail')}</h3><button class="btn sm" id="d-copymail">📋 ${t('copyMail')}</button></div><pre class="orig">${esc(c.textoOriginal||'—')}</pre></div>
+  </div>`;
   hydrate(d);
   $('#d-close').onclick=closeDetail;
   d.querySelectorAll('[data-rm]').forEach(b=>b.onclick=async e=>{e.stopPropagation();if(!confirm(t('removeQ')))return;const fid=b.dataset.rm;b.closest('.ph').style.opacity=.3;
     try{const nc=await api('removeFile',{id:c.id,fid,logo:true});const i=CASOS.findIndex(x=>x.id===c.id);CASOS[i]=nc;renderDetail();renderList();toast(t('removed'))}catch(err){b.closest('.ph').style.opacity=1;toast(t('errSave')+' : '+err.message)}});
   d.querySelectorAll('[data-main]').forEach(b=>b.onclick=async e=>{e.stopPropagation();b.disabled=true;
     try{const nc=await api('setMain',{id:c.id,fid:b.dataset.main});const i=CASOS.findIndex(x=>x.id===c.id);CASOS[i]=nc;renderDetail();renderAll();toast(t('mainSet'))}catch(err){b.disabled=false;toast(t('errSave')+' : '+err.message)}});
+  $('#d-copymail').onclick=async()=>{try{await navigator.clipboard.writeText(c.textoOriginal||'');toast(t('copied'))}catch(_){const r=document.createRange();r.selectNodeContents(d.querySelector('.orig'));const s=getSelection();s.removeAllRanges();s.addRange(r);document.execCommand('copy');toast(t('copied'))}};
+  if($('#d-hist'))$('#d-hist').onclick=()=>{showFullHist=!showFullHist;renderDetail()};
   if($('#d-copysubj'))$('#d-copysubj').onclick=async()=>{try{await navigator.clipboard.writeText(subj);toast(t('copied'))}catch(_){}};
   const addNote=async()=>{const v=$('#d-note').value.trim();if(!v)return;$('#d-addnote').disabled=true;
     try{const nc=await api('addNote',{id:c.id,text:v});const i=CASOS.findIndex(x=>x.id===c.id);CASOS[i]=nc;document.activeElement.blur();renderDetail();renderList();toast(t('noteAdded'))}catch(_){toast(t('errSave'));$('#d-addnote').disabled=false}};
