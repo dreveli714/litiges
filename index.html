@@ -81,6 +81,10 @@ div.thumb{display:grid;place-items:center;color:var(--muted);font-size:11px}
 .row>.rbody{grid-column:2;min-width:0}
 .row>.side{grid-column:3}
 @media (max-width:600px){.row>.side{grid-column:1/-1}}
+.mdiv{display:flex;align-items:center;gap:10px;margin:12px 4px 0;font-size:12.5px;font-weight:700;color:var(--muted);text-transform:capitalize}
+.mdiv::after{content:"";flex:1;height:1px;background:var(--line)}
+.mdiv span{font-weight:600;opacity:.8}
+.mdiv:first-child{margin-top:0}
 .row h3{margin:0;font-size:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:800}
 .row p{margin:3px 0 6px}
 .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted)}
@@ -256,6 +260,7 @@ th{font-weight:700;color:var(--muted);font-size:13px}
       </aside>
       <div>
         <div class="listhead"><h1 data-t="tabCases"></h1><span class="count" id="count"></span><div class="spacer"></div>
+          <select class="inp" id="f-sort" style="width:auto"></select>
           <button class="btn sm" id="b-exp-all" data-t="exportList"></button></div>
         <div class="rows" id="rows"></div>
       </div>
@@ -350,6 +355,7 @@ const I18N={
   pdf:'PDF',followUp:'Suivi du dossier',notePh:'Ajouter une note : où en est le dossier ?',addNote:'Ajouter',noteAdded:'Note ajoutée',newB:'Nouveau',
   relaunch:'Relancer l’IA',relaunching:'Analyse en cours…',relaunched:'Champs complétés par l’IA',lastNote:'Dernier suivi',
   idHint:'Pour rattacher un nouveau mail à ce dossier, mettez ce code dans l’objet lors du transfert :',copyId:'Copier le code',
+  sortDesc:'Date de réclamation : récentes d’abord',sortAsc:'Date de réclamation : anciennes d’abord',sortAdded:'Date d’ajout dans l’app',
   mainT:'Principale',setMain:'Principale',mainSet:'Photo principale modifiée',
   removeQ:'Retirer ce fichier du dossier ?\n\nIl ira dans la corbeille de Drive. Si c’est un logo ou une signature, il sera ignoré automatiquement dans les prochains mails.',removed:'Fichier retiré',removeT:'Retirer',caseN:(i,n)=>`Dossier ${i} sur ${n}`,
   subject:'Objet du mail',copySubj:'Copier l’objet',techTodo:'À diagnostiquer',techDone:'Diagnostiqués',update:'Mettre à jour',movedDone:'Enregistré : le dossier est dans « Diagnostiqués »',diagOn:d=>'Diagnostiqué le '+d,doneN:n=>`${n} dossier${n>1?'s':''} diagnostiqué${n>1?'s':''}`,nothingDone:'Aucun dossier diagnostiqué',nothingDoneHint:'Les dossiers apparaissent ici après le diagnostic.',
@@ -380,6 +386,7 @@ const I18N={
   pdf:'PDF',followUp:'Case follow-up',notePh:'Add a note: where does the case stand?',addNote:'Add',noteAdded:'Note added',newB:'New',
   relaunch:'Run AI again',relaunching:'Analysing…',relaunched:'Fields filled in by AI',lastNote:'Last update',
   idHint:'To attach a new email to this case, put this code in the subject when forwarding:',copyId:'Copy code',
+  sortDesc:'Claim date: newest first',sortAsc:'Claim date: oldest first',sortAdded:'Date added to the app',
   mainT:'Main',setMain:'Main',mainSet:'Main photo updated',
   removeQ:'Remove this file from the case?\n\nIt will go to the Drive bin. If it is a logo or signature, it will be ignored automatically in future emails.',removed:'File removed',removeT:'Remove',caseN:(i,n)=>`Case ${i} of ${n}`,
   subject:'Email subject',copySubj:'Copy subject',techTodo:'To diagnose',techDone:'Diagnosed',update:'Update',movedDone:'Saved: the case is now under “Diagnosed”',diagOn:d=>'Diagnosed on '+d,doneN:n=>`${n} diagnosed case${n>1?'s':''}`,nothingDone:'No diagnosed cases',nothingDoneHint:'Cases show up here once diagnosed.',
@@ -460,18 +467,27 @@ async function api(action,data={}){
 const MEDIA=new Map(), MEDIA_BLOB=new Map(), inflight=new Map();
 let active=0;const queue=[];
 function pump(){while(active<4&&queue.length){const job=queue.shift();active++;job().finally(()=>{active--;pump()})}}
+/* cache permanent des images dans le navigateur (IndexedDB) : une photo ne change jamais pour un même id */
+let _idb=null;
+function idb(){if(_idb)return _idb;_idb=new Promise(res=>{try{const r=indexedDB.open('litiges-cache',1);r.onupgradeneeded=()=>r.result.createObjectStore('media');r.onsuccess=()=>res(r.result);r.onerror=()=>res(null)}catch(_){res(null)}});return _idb}
+async function idbGet(k){const db=await idb();if(!db)return null;return new Promise(res=>{try{const q=db.transaction('media').objectStore('media').get(k);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)}catch(_){res(null)}})}
+async function idbPut(k,v){const db=await idb();if(!db)return;try{db.transaction('media','readwrite').objectStore('media').put(v,k)}catch(_){}}
 function getMedia(caseId,fid,size){
   const key=fid+'@'+size;
   if(MEDIA.has(key))return Promise.resolve(MEDIA.get(key));
   if(inflight.has(key))return inflight.get(key);
-  const p=new Promise((res,rej)=>{queue.push(async()=>{
+  const p=new Promise((res,rej)=>{(async()=>{
+    const cached=await idbGet(key);
+    if(cached&&cached instanceof Blob){const url=URL.createObjectURL(cached);MEDIA.set(key,url);inflight.delete(key);res(url);return}
+    queue.push(async()=>{
     try{const m=await api('media',{id:caseId,fid,size});
       if(m.gone){MEDIA.set(key,'GONE');const c=CASOS.find(x=>x.id===caseId);if(c)c.fotos=(c.fotos||[]).filter(x=>x!==fid);res('GONE');return}
       let blob=b64ToBlob(m.data,m.mime);
       if(m.mime==='application/pdf'){MEDIA_BLOB.set(fid,blob);try{blob=await pdfFirstPage(blob)}catch(_){blob=null}}
       else if(!size)MEDIA_BLOB.set(fid,blob);
+      if(blob&&size)idbPut(key,blob);
       const url=blob?URL.createObjectURL(blob):'';MEDIA.set(key,url);res(url)}catch(e){rej(e)}finally{inflight.delete(key)}
-  });pump()});
+  });pump()})()});
   inflight.set(key,p);return p;
 }
 function loadImg(img){
@@ -489,15 +505,21 @@ const IO=('IntersectionObserver' in window)?new IntersectionObserver(es=>es.forE
 function hydrate(root){
   root.querySelectorAll('img[data-fid]:not([data-done])').forEach(img=>{img.dataset.done='1';if(IO)IO.observe(img);else loadImg(img)});
 }
-const mimg=(c,fid,size,cls='',extra='')=>`<img class="${cls}" data-case="${esc(c.id)}" data-fid="${esc(fid)}" data-size="${size}" alt="" ${extra}>`;
+const mimg=(c,fid,size,cls='',extra='')=>{const u=MEDIA.get(fid+'@'+size);const ok=u&&u!=='GONE';
+  return `<img class="${cls}" data-case="${esc(c.id)}" data-fid="${esc(fid)}" data-size="${size}" ${ok?`src="${u}" data-done="1"`:''} alt="" ${extra}>`};
 
 /* ============ state ============ */
 let CASOS=[], CATALOGO=[], newFiles=[], techDraft={}, lastExport=null, openId=null;
 
+const sigOf=list=>JSON.stringify(list,(k,v)=>k.startsWith('_')?undefined:v);
+function markFresh(){const b=$('#b-refresh');b.classList.remove('primary');b.textContent=t('refresh')}
+async function checkUpdates(){
+  try{const cases=await api('list');if(sigOf(cases)!==sigOf(CASOS)){const b=$('#b-refresh');b.classList.add('primary');b.textContent='● '+t('refresh')}}catch(_){}
+}
 async function load(silent){
   try{
     const [cases,cat]=await Promise.all([api('list'),CATALOGO.length&&silent?Promise.resolve(CATALOGO):api('catalog')]);
-    CASOS=cases;CATALOGO=cat;renderAll();
+    CASOS=cases;CATALOGO=cat;renderAll();markFresh();
     if(!CATALOGO.length){try{await api('saveCatalog',{refs:DEFAULT_CATALOG});CATALOGO=DEFAULT_CATALOG.slice()}catch(_){}}
   }catch(e){if(!silent)toast(e.message)}
 }
@@ -521,8 +543,11 @@ document.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{LANG=b.datase
 $('#b-refresh').onclick=()=>load();
 
 /* ============ list ============ */
+let SORT=lsGet('lit_sort')||'desc';
+function fillSort(){$('#f-sort').innerHTML=[['desc','sortDesc'],['asc','sortAsc'],['added','sortAdded']].map(([v,k])=>`<option value="${v}" ${SORT===v?'selected':''}>${esc(t(k))}</option>`).join('')}
+$('#f-sort').onchange=e=>{SORT=e.target.value;lsSet('lit_sort',SORT);renderList()};
 const FIL=['#f-q','#f-cli','#f-ref','#f-tipo','#f-est','#f-d1','#f-d2'];
-function fillFilterSelects(){
+function fillFilterSelects(){fillSort();
   const cli=[...new Set(CASOS.map(c=>c.cliente).filter(Boolean))].sort();const refs=[...new Set(CASOS.map(c=>c.referencia).filter(Boolean))].sort();
   const v=FIL.map(s=>$(s).value);
   $('#f-cli').innerHTML=`<option value="">${t('all')}</option>`+opts(cli,v[1]);
@@ -535,14 +560,22 @@ $('#f-clear').onclick=()=>{FIL.forEach(s=>$(s).value='');renderList()};
 function filtered(){
   const [q,cli,ref,tp,es,d1,d2]=FIL.map(s=>$(s).value);const nq=norm(q);
   return CASOS.filter(c=>(!cli||c.cliente===cli)&&(!ref||c.referencia===ref)&&(!tp||tipoOf(c)===tp)&&(!es||c.estado===es)&&(!d1||String(c.fechaReclamo)>=d1)&&(!d2||String(c.fechaReclamo)<=d2)
-    &&(!nq||norm([c.cliente,c.resumeFr,c.resumeEn,c.textoOriginal,c.pedido,c.referencia,c.id].join(' ')).includes(nq))).sort((a,b)=>String(b.creado).localeCompare(String(a.creado)));
+    &&(!nq||norm([c.cliente,c.resumeFr,c.resumeEn,c.textoOriginal,c.pedido,c.referencia,c.id].join(' ')).includes(nq)))
+  .sort((a,b)=>{const da=String(a.fechaReclamo||'').slice(0,10),db=String(b.fechaReclamo||'').slice(0,10);
+    if(SORT==='added')return String(b.creado).localeCompare(String(a.creado));
+    const r=SORT==='asc'?da.localeCompare(db):db.localeCompare(da);return r||String(b.creado).localeCompare(String(a.creado))});
 }
+function monthLabel(d){if(!d)return'—';const x=new Date(String(d).slice(0,7)+'-15T12:00:00');return isNaN(x)?'—':x.toLocaleDateString(LANG==='fr'?'fr-FR':'en-GB',{month:'long',year:'numeric'})}
 function renderList(){
   const list=filtered();$('#count').textContent=`${list.length} ${t('of')} ${CASOS.length}`;
   if(!CASOS.length){$('#rows').innerHTML=`<div class="empty-state"><strong>${t('noCases')}</strong>${t('noCasesHint')}</div>`;return}
   if(!list.length){$('#rows').innerHTML=`<div class="empty-state"><strong>${t('noMatch')}</strong>${t('noMatchHint')}</div>`;return}
+  const mkey=c=>SORT==='added'?String(c.creado).slice(0,7):String(c.fechaReclamo||'').slice(0,7);
+  const counts={};list.forEach(c=>{const k=mkey(c);counts[k]=(counts[k]||0)+1});
+  let lastM=null;
   $('#rows').innerHTML=list.map(c=>{const r=recInfo(c);const f=(c.fotos||[])[0];
-    return `<button class="row" data-id="${esc(c.id)}">${f?mimg(c,f,200,'thumb','loading="lazy"'):`<div class="thumb">${t('noPhoto')}</div>`}
+    const mk=mkey(c);const div=mk!==lastM?`<div class="mdiv">${esc(monthLabel(mk))} <span>· ${counts[mk]}</span></div>`:'';lastM=mk;
+    return div+`<button class="row" data-id="${esc(c.id)}">${f?mimg(c,f,200,'thumb','loading="lazy"'):`<div class="thumb">${t('noPhoto')}</div>`}
     <div class="rbody"><h3>${esc(c.cliente||'—')} ${c.referencia?`<span class="chip ref">${esc(c.referencia)}</span>`:''} ${r.n>1?`<span class="chip rec">${t('nthClaim',r.pos)}</span>`:''}${unread(c)?`<span class="chip new">${t('newB')}</span>`:''}</h3>
     ${subjectOf(c)?`<p class="subjl">✉ ${esc(subjectOf(c))}</p>`:''}<p>${esc(resumen(c)||t('noSummary'))}</p>
     <div class="meta">${tipoChip(tipoOf(c))}${c.sintoma?`<span>${esc(L('sint',c.sintoma))}</span>`:''}${c.rollos?`<span>${t('rolls',+c.rollos)}${c.formato?t('ofM',c.formato):''}</span>`:''}${c.pedido?`<span>${t('order')} ${esc(c.pedido)}</span>`:''}${c.origen==='mail'?`<span>${t('fromMail')}</span>`:''}</div>${lastNote(c)?`<div class="meta" style="margin-top:4px">${t('lastNote')} (${fmtD(lastNote(c).t)}) : <b style="color:var(--ink)">${esc(lastNote(c).accion)}</b></div>`:''}</div>
@@ -632,7 +665,7 @@ function renderDetail(soft){
     ${subj?`<div class="subj">${t('subject')} : <b>${esc(subj)}</b><button class="btn ghost sm" id="d-copysubj">${t('copySubj')}</button></div>`:''}</div>
     <span class="meta">${esc(c.id)}</span><button class="btn ghost" id="d-close">${t('close')}</button></div>
   <div class="dbody"><div class="dcols"><div class="dcol">
-   <div class="dsec"><h3>${t('photos')} (${(c.fotos||[]).length})</h3><div class="photos">${(c.fotos||[]).map((f,i)=>`<div class="ph${i===0?' main':''}">${mimg(c,f,1600,'','loading="lazy"')}${i===0?`<span class="tag">★ ${esc(t('mainT'))}</span>`:''}
+   <div class="dsec"><h3>${t('photos')} (${(c.fotos||[]).length})</h3><div class="photos">${(c.fotos||[]).map((f,i)=>`<div class="ph${i===0?' main':''}">${mimg(c,f,500,'','loading="lazy"')}${i===0?`<span class="tag">★ ${esc(t('mainT'))}</span>`:''}
        <div class="bar2">${i===0?'<span></span>':`<button data-main="${esc(f)}">★ ${esc(t('setMain'))}</button>`}<button class="del" data-rm="${esc(f)}" aria-label="${esc(t('removeT'))}">🗑 ${esc(t('removeT'))}</button></div></div>`).join('')}</div>
      <div style="margin-top:8px"><button class="btn sm" id="d-add">${t('addFiles')}</button><input type="file" id="d-files" accept="image/*,application/pdf" multiple hidden></div></div>
    <div class="dsec"><h3>${t('followUp')}</h3>
@@ -669,7 +702,7 @@ function renderDetail(soft){
   $('#d-reai').onclick=async()=>{const b=$('#d-reai');b.disabled=true;$('#d-reai-st').innerHTML=`<i class="spin"></i> ${t('relaunching')}`;
     try{const nc=await api('reanalyze',{id:c.id});const i=CASOS.findIndex(x=>x.id===c.id);CASOS[i]=nc;document.activeElement.blur();renderDetail();renderAll();toast(t('relaunched'))}
     catch(e){$('#d-reai-st').textContent=t('aiFail')+' ('+e.message+')';b.disabled=false}};
-  d.querySelectorAll('.photos img').forEach(i=>i.onclick=()=>i.src&&lightbox(i.src));
+  d.querySelectorAll('.photos img').forEach(i=>i.onclick=()=>{if(!i.src)return;lightbox(i.src);getMedia(i.dataset.case,i.dataset.fid,1600).then(u=>{if(u&&u!=='GONE'&&!$('#lb').hidden)$('#lb').querySelector('img').src=u}).catch(()=>{})});
   d.querySelectorAll('[data-go]').forEach(tr=>tr.onclick=()=>openDetail(tr.dataset.go));
   $('#d-save').onclick=async()=>{const v=readForm($('#d-form'));const ch=[];if(v.estado!==c.estado)ch.push('Statut : '+L('est',v.estado));if(v.resolucion&&v.resolucion!==c.resolucion)ch.push('Résolution : '+L('res',v.resolucion));
     try{document.activeElement.blur();await update(c.id,v,ch.join(', ')||'Données modifiées');toast(t('changesSaved'))}catch(e){toast(t('errSave'))}};
@@ -809,7 +842,7 @@ function setHH(){document.documentElement.style.setProperty('--hh',$('.top').off
 setHH();addEventListener('resize',setHH);
 applyI18n();
 if(!API_URL||!PIN)showLogin();else{$('#login').hidden=true;load()}
-setInterval(()=>{if(document.visibilityState==='visible'&&API_URL&&PIN&&$('#login').hidden&&$('#m-new').hidden)load(true)},60000);
+setInterval(()=>{if(document.visibilityState==='visible'&&API_URL&&PIN&&$('#login').hidden)checkUpdates()},90000);
 </script>
 </body>
 </html>
