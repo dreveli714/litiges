@@ -1,0 +1,23 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-10-19T08:16:14.217Z",
+        "reason": "Claude: viewer <img id=lb-img> gets its src from JS at runtime when a photo is opened; not a broken image"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-10-19T08:17:42.002Z",
+        "reason": "Claude: Inter chosen deliberately for legibility in this data-dense internal claims tool (user asked for clarity, not brand personality)"
+      }
+    ]
+  }
+}
