@@ -107,6 +107,23 @@ main{max-width:1320px;margin:0 auto;padding:22px 20px 60px}
 .st-diagnostique{background:var(--blue-soft);color:var(--blue)}
 .st-repondu{background:var(--violet-soft);color:var(--violet)}
 .st-clos{background:var(--ok-soft);color:var(--ok)}
+.st-formulaire{background:#E0F2FE;color:#026AA2}
+.chip.fm{background:#E0F2FE;color:#026AA2}
+.chip.fm.ok{background:var(--ok-soft);color:var(--ok)}
+.fbox{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:10px}
+.fsteps{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:13.5px}
+.fsteps li{display:flex;gap:8px;align-items:center;color:var(--muted)}
+.fsteps li.on{color:var(--ink);font-weight:600}
+.fsteps li i{font-style:normal;width:18px;text-align:center}
+.fans{display:grid;gap:10px}
+.fans h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri)}
+.fans dl{margin:0;display:grid;grid-template-columns:minmax(110px,42%) 1fr;gap:3px 10px;font-size:13.5px}
+.fans dt{color:var(--muted)}
+.fans dd{margin:0;word-break:break-word}
+.fphotos{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.fphotos img{width:64px;height:64px;object-fit:cover;border-radius:8px;cursor:zoom-in;background:var(--bg)}
+textarea.msgbox{min-height:260px;font-size:14px}
+.stepper li small{display:block;font-size:11.5px;font-weight:500;color:var(--muted)}
 
 /* ---- barre de filtres ---- */
 .stpills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
@@ -475,6 +492,21 @@ details.dsec>summary small{font-weight:400;color:var(--muted);font-size:13px}
   </div>
 </div>
 
+<div class="modal" id="m-form" hidden>
+  <div class="mbox" style="width:min(720px,100%)">
+    <div class="mhead"><h2 data-t="fmModalT"></h2><button class="btn icon ghost" data-close aria-label="Fermer">✕</button></div>
+    <div class="mbody">
+      <div class="grid2"><div class="field"><label for="mf-lang" data-t="fmLang"></label><select class="inp" id="mf-lang"></select></div>
+        <div class="field"><label for="mf-to" data-t="fmTo"></label><input class="inp" id="mf-to" type="email"></div></div>
+      <div class="field"><label for="mf-subj" data-t="subject"></label><input class="inp" id="mf-subj"></div>
+      <textarea class="inp msgbox" id="mf-msg" aria-label="Message"></textarea>
+      <p class="note" style="margin:0" data-t="fmHint"></p>
+      <span class="aistate" id="mf-st"></span>
+    </div>
+    <div class="mfoot"><button class="btn" id="mf-copy" data-t="fmCopyMsg"></button><button class="btn primary" id="mf-mail" data-t="fmMail"></button></div>
+  </div>
+</div>
+
 <div class="lightbox" id="lb" hidden role="dialog" aria-modal="true">
   <div class="lb-stage" id="lb-stage"><img id="lb-img" alt="" draggable="false"></div>
   <div class="lb-top"><span id="lb-count"></span><span class="lb-q" id="lb-q"></span><span class="lb-hint" data-t="zoomHint"></span><span class="spacer" hidden></span><button class="lb-btn" id="lb-close" aria-label="Fermer">✕</button></div>
@@ -499,7 +531,15 @@ const I18N={
   diagT:'Diagnostic',diagFree:'Pas encore de diagnostic. Écrivez-le ici, ou laissez le technicien le faire dans son onglet.',editDiag:'Modifier',saveDiag:'Enregistrer le diagnostic',
   updates:'Nouveautés, actualiser',guide:'Comment ça marche',language:'Langue',moreFilters:'Filtres',
   guideTitle:'Comment ça marche, en 4 étapes',gotIt:'J’ai compris, masquer',
-  g1t:'Enregistrer',g1:'« + Nouveau litige » : collez le mail, ajoutez les photos, l’IA remplit la fiche.',
+  g1t:'Enregistrer',g1:'Le mail arrive (ou « + Nouveau litige »), puis « Demander le formulaire » : le client complète tout en ligne, avec les photos.',
+  fmT:'Formulaire client',fmNone:'Demandez au client de compléter le formulaire en ligne : questions adaptées au type de problème, photos obligatoires, conditions de garantie. Il peut l’enregistrer et le finir plus tard.',
+  fmAsk:'📨 Demander le formulaire',fmResend:'📨 Renvoyer le message',fmCopyLink:'Copier le lien',fmOpen:'Voir le formulaire ↗',
+  fmS_cree:'Lien créé',fmS_ouvert:'Ouvert par le client',fmS_brouillon:'En cours de saisie',fmS_soumis:'Formulaire reçu',fmSent:'Envoyé au client',
+  fmChip_cree:'📨 Formulaire envoyé',fmChip_ouvert:'👁 Formulaire ouvert',fmChip_brouillon:'✎ Formulaire en cours',fmChip_soumis:'✓ Formulaire reçu',
+  fmAnswers:'Réponses du client',fmPhotos:'Photos du formulaire',fmModalT:'Demander le formulaire au client',fmLang:'Langue du message',fmTo:'À',
+  fmCopyMsg:'📋 Copier le message',fmMail:'✉ Ouvrir dans ma messagerie',fmMarked:'Dossier marqué « Formulaire envoyé »',fmNotReady:'Le serveur n’a pas encore la fonction formulaire (voir INSTALL.md).',
+  fmHint:'Copiez le message ou ouvrez votre messagerie : le dossier passe en « Formulaire envoyé ». Gardez la référence du dossier dans l’objet : les réponses du client seront rattachées automatiquement.',
+  stRecu:'Reçu',stForm:'Formulaire',stDiag:'Diagnostic',stRep:'Réponse',stClos:'Clôturé',stSkip:'facultatif',
   g2t:'Diagnostiquer',g2:'Le technicien choisit la cause dans son onglet, ou vous l’écrivez dans le dossier.',
   g3t:'Répondre',g3:'Ouvrez le dossier : l’IA propose une réponse à copier dans votre mail.',
   g4t:'Fournisseur',g4:'Onglet Statistiques : Excel + photos à envoyer au fournisseur.',
@@ -547,7 +587,15 @@ const I18N={
   diagT:'Diagnosis',diagFree:'No diagnosis yet. Write it here, or let the technician do it in their tab.',editDiag:'Edit',saveDiag:'Save diagnosis',
   updates:'New data, refresh',guide:'How it works',language:'Language',moreFilters:'Filters',
   guideTitle:'How it works, in 4 steps',gotIt:'Got it, hide',
-  g1t:'Record',g1:'“+ New claim”: paste the email, add photos, the AI fills in the form.',
+  g1t:'Record',g1:'The email arrives (or “+ New claim”), then “Request the form”: the customer fills everything in online, with photos.',
+  fmT:'Customer form',fmNone:'Ask the customer to fill in the online form: questions adapted to the type of problem, mandatory photos, warranty conditions. They can save it and finish later.',
+  fmAsk:'📨 Request the form',fmResend:'📨 Send the message again',fmCopyLink:'Copy link',fmOpen:'View the form ↗',
+  fmS_cree:'Link created',fmS_ouvert:'Opened by the customer',fmS_brouillon:'Being filled in',fmS_soumis:'Form received',fmSent:'Sent to customer',
+  fmChip_cree:'📨 Form sent',fmChip_ouvert:'👁 Form opened',fmChip_brouillon:'✎ Form in progress',fmChip_soumis:'✓ Form received',
+  fmAnswers:'Customer answers',fmPhotos:'Form photos',fmModalT:'Request the form from the customer',fmLang:'Message language',fmTo:'To',
+  fmCopyMsg:'📋 Copy message',fmMail:'✉ Open in my email',fmMarked:'Case marked “Form sent”',fmNotReady:'The server does not have the form feature yet (see INSTALL.md).',
+  fmHint:'Copy the message or open your email: the case moves to “Form sent”. Keep the case reference in the subject: customer replies will be linked automatically.',
+  stRecu:'Received',stForm:'Form',stDiag:'Diagnosis',stRep:'Reply',stClos:'Closed',stSkip:'optional',
   g2t:'Diagnose',g2:'The technician picks the cause in their tab, or you write it in the case.',
   g3t:'Reply',g3:'Open the case: the AI drafts a reply to copy into your email.',
   g4t:'Supplier',g4:'Statistics tab: Excel + photos to send to the supplier.',
@@ -594,7 +642,7 @@ const I18N={
 const LABELS={
  tipo:{transporte:['Transport','Transport'],fabricacion:['Fabrication','Manufacturing'],envejecimiento:['Vieillissement / performance','Ageing / performance'],instalacion:['Pose / usage','Installation / use'],pendiente:['À déterminer','To be determined']},
  sint:{taches:['Taches','Stains'],bulles:['Bulles','Bubbles'],plis:['Plis / froissures','Creases'],marques_bobine:['Marques de bobine','Core marks'],rayures:['Rayures','Scratches'],decollement:['Décollement / délamination','Peeling / delamination'],decoloration:['Décoloration','Discoloration'],adhesif:['Adhésif défectueux','Adhesive defect'],dechire:['Film déchiré ou coupé','Torn or cut film'],autre:['Autre','Other']},
- est:{analyse:['À analyser','To analyse'],attente:['Attente client','Waiting for customer'],diagnostique:['Diagnostiqué','Diagnosed'],repondu:['Répondu','Answered'],clos:['Clôturé','Closed']},
+ est:{analyse:['À analyser','To analyse'],formulaire:['Formulaire envoyé','Form sent'],attente:['Attente client','Waiting for customer'],diagnostique:['Diagnostiqué','Diagnosed'],repondu:['Répondu','Answered'],clos:['Clôturé','Closed']},
  res:{avoir:['Avoir','Credit note'],remplacement:['Remplacement','Replacement'],refuse:['Refusé','Rejected'],aucune:['Sans suite','No action']},
  imp:{transporteur:['Transporteur','Carrier'],fournisseur:['Fournisseur','Supplier'],client:['Client','Customer'],indetermine:['À déterminer','To be determined']},
  lng:{es:['Espagnol','Spanish'],en:['Anglais','English'],fr:['Français','French'],it:['Italien','Italian'],pt:['Portugais','Portuguese'],de:['Allemand','German']}
@@ -710,16 +758,23 @@ const mimg=(c,fid,size,cls='',extra='')=>{const u=MEDIA.get(fid+'@'+size);const 
 
 /* ============ state ============ */
 let CASOS=[], CATALOGO=[], newFiles=[], techDraft={}, lastExport=null, openId=null;
+/* formulaires client : dernier formulaire par dossier ; FORMS_OK = le serveur gère les formulaires */
+let FORMS={}, FORMS_OK=false;
+function setForms(list){FORMS_OK=Array.isArray(list);FORMS={};(list||[]).forEach(f=>{FORMS[f.caseId]=f})}
+const formOf=c=>FORMS[c.id]||null;
+const formUrl=tok=>new URL('form.html?t='+encodeURIComponent(tok),location.href).href;
+function formChip(c){const f=formOf(c);if(!f)return'';return `<span class="chip fm${f.statut==='soumis'?' ok':''}">${esc(t('fmChip_'+f.statut))}</span>`}
 
 const sigOf=list=>JSON.stringify(list,(k,v)=>k.startsWith('_')?undefined:v);
 function markFresh(){$('#b-updates').hidden=true}
 async function checkUpdates(){
-  try{const cases=await api('list');if(sigOf(cases)!==sigOf(CASOS))$('#b-updates').hidden=false}catch(_){}
+  try{const [cases,forms]=await Promise.all([api('list'),api('formList').catch(()=>null)]);
+    if(sigOf(cases)!==sigOf(CASOS)||(forms&&sigOf(forms)!==sigOf(Object.values(FORMS))))$('#b-updates').hidden=false}catch(_){}
 }
 async function load(silent){
   try{
-    const [cases,cat]=await Promise.all([api('list'),CATALOGO.length&&silent?Promise.resolve(CATALOGO):api('catalog')]);
-    CASOS=cases;CATALOGO=cat;renderAll();markFresh();
+    const [cases,cat,forms]=await Promise.all([api('list'),CATALOGO.length&&silent?Promise.resolve(CATALOGO):api('catalog'),api('formList').catch(()=>null)]);
+    CASOS=cases;CATALOGO=cat;setForms(forms);renderAll();markFresh();
     if(!CATALOGO.length){try{await api('saveCatalog',{refs:DEFAULT_CATALOG});CATALOGO=DEFAULT_CATALOG.slice()}catch(_){}}
   }catch(e){if(!silent)toast(e.message)}
 }
@@ -731,7 +786,7 @@ $('#l-go').onclick=async()=>{
   API_URL=$('#l-url').value.trim()||API_URL;PIN=$('#l-pin').value.trim();
   if(!API_URL){$('#url-field').hidden=false;return}
   $('#l-err').textContent=t('loading');
-  try{CASOS=await api('list');lsSet('lit_api',API_URL);lsSet('lit_pin',PIN);$('#login').hidden=true;CATALOGO=await api('catalog').catch(()=>[]);if(!CATALOGO.length){try{await api('saveCatalog',{refs:DEFAULT_CATALOG});CATALOGO=DEFAULT_CATALOG.slice()}catch(_){}}renderAll()}
+  try{CASOS=await api('list');lsSet('lit_api',API_URL);lsSet('lit_pin',PIN);$('#login').hidden=true;CATALOGO=await api('catalog').catch(()=>[]);setForms(await api('formList').catch(()=>null));if(!CATALOGO.length){try{await api('saveCatalog',{refs:DEFAULT_CATALOG});CATALOGO=DEFAULT_CATALOG.slice()}catch(_){}}renderAll()}
   catch(e){$('#l-err').textContent=e.message==='PIN'?t('badPin'):e.message;$('#url-field').hidden=false}
 };
 $('#l-pin').onkeydown=e=>{if(e.key==='Enter')$('#l-go').click()};
@@ -790,7 +845,7 @@ function renderList(){
   $('#rows').innerHTML=list.map(c=>{const r=recInfo(c);const f=(c.fotos||[])[0];const ln=lastNote(c);
     const mk=mkey(c);const div=mk!==lastM?`<div class="mdiv">${esc(monthLabel(mk))} · ${counts[mk]}</div>`:'';lastM=mk;
     return div+`<button class="row" data-id="${esc(c.id)}">${f?mimg(c,f,200,'thumb','loading="lazy"'):`<div class="thumb">${t('noPhoto')}</div>`}
-    <div class="rbody"><div class="rtop"><strong>${esc(c.cliente||'—')}</strong>${c.referencia?`<span class="chip ref">${esc(c.referencia)}</span>`:''}${unread(c)?`<span class="chip new">${t('newB')}</span>`:''}${r.n>1?`<span class="chip rec">${t('nthClaim',r.pos)}</span>`:''}</div>
+    <div class="rbody"><div class="rtop"><strong>${esc(c.cliente||'—')}</strong>${c.referencia?`<span class="chip ref">${esc(c.referencia)}</span>`:''}${unread(c)?`<span class="chip new">${t('newB')}</span>`:''}${formChip(c)}${r.n>1?`<span class="chip rec">${t('nthClaim',r.pos)}</span>`:''}</div>
     <p class="rsum">${esc(resumen(c)||t('noSummary'))}</p>
     <div class="meta">${tipoChip(tipoOf(c))}${c.rollos?`<span>${t('rolls',+c.rollos)}${c.formato?t('ofM',c.formato):''}</span>`:''}${c.sintoma?`<span>${esc(L('sint',c.sintoma))}</span>`:''}</div>
     ${ln?`<div class="lastnote">📝 <b>${esc(ln.accion)}</b> · ${fmtD(ln.t)}</div>`:''}</div>
@@ -880,9 +935,37 @@ document.addEventListener('keydown',e=>{
   if($('#menu').open){closeMenu();return}
   if(openId)closeDetail()});
 async function update(id,fields,hist){const c=await api('update',{id,fields,hist});const i=CASOS.findIndex(x=>x.id===id);if(i>=0)CASOS[i]=c;renderAll();return c}
+/* Étapes : Reçu → Formulaire client → Diagnostic → Réponse → Clôturé (avec la résolution) */
 function stepper(c){
-  const order=['analyse','diagnostique','repondu','clos'];const wait=c.estado==='attente';let cur=wait?0:order.indexOf(c.estado);if(cur<0)cur=0;
-  return `<ol class="stepper">${order.map((s,i)=>`<li class="${i<cur?'done':i===cur?'cur':''}${wait&&i===0?' wait':''}"><i>${i<cur?'✓':(wait&&i===0?'!':i+1)}</i><span>${esc(wait&&i===0?L('est','attente'):L('est',s))}</span></li>`).join('')}</ol>`;
+  const f=formOf(c),e=c.estado,closed=e==='clos',answered=closed||e==='repondu';
+  const st=[
+    {l:t('stRecu'),done:true,sub:fmtD(c.fechaReclamo)},
+    {l:t('stForm'),done:!!f&&f.statut==='soumis',active:!!f||e==='formulaire',sub:f?t('fmS_'+f.statut):t('stSkip')},
+    {l:t('stDiag'),done:!!c.diagnostico,sub:c.diagnostico?L('tipo',c.tipoFinal):''},
+    {l:t('stRep'),done:answered},
+    {l:t('stClos'),done:closed,sub:closed&&c.resolucion?L('res',c.resolucion):''}];
+  const skipForm=!f&&e!=='formulaire'&&(c.diagnostico||answered);
+  let cur=st.findIndex((x,i)=>!x.done&&!(i===1&&(skipForm||(!f&&e!=='formulaire'))));if(cur<0)cur=st.length;
+  return `<ol class="stepper">${st.map((x,i)=>{const cls=x.done?'done':i===cur?'cur':'';const wait=i===cur&&e==='attente';
+    return `<li class="${cls}${wait?' wait':''}"><i>${x.done?'✓':wait?'!':i+1}</i><span>${esc(wait?L('est','attente'):x.l)}${x.sub?`<small>${esc(x.sub)}</small>`:''}</span></li>`}).join('')}</ol>`;
+}
+function formSection(c){
+  const f=formOf(c);
+  let h=`<section class="dsec"><h3><i class="num">2</i>${t('fmT')}</h3>`;
+  if(!f){
+    h+=`<p class="note" style="margin:0 0 10px">${t('fmNone')}</p>${FORMS_OK?'':`<p class="note" style="margin:0 0 10px;color:var(--amber)">${t('fmNotReady')}</p>`}<button class="btn primary sm" id="d-fask">${t('fmAsk')}</button>`;
+    return h+'</section>';
+  }
+  const order=['cree','ouvert','brouillon','soumis'];const k=order.indexOf(f.statut);
+  h+=`<div class="fbox"><ul class="fsteps">${order.map((s,i)=>`<li class="${i===k?'on':''}"><i>${i<=k?'✓':'○'}</i>${t('fmS_'+s)}${i===0&&f.cree?' · '+fmtD(f.cree):''}${i===2&&f.maj&&k===2?' · '+fmtD(f.maj):''}${i===3&&f.envoye?' · '+fmtD(f.envoye):''}</li>`).join('')}</ul>`;
+  if(f.statut!=='soumis')h+=`<div class="actrow" style="margin-top:0"><button class="btn sm" id="d-fask">${t('fmResend')}</button><button class="btn ghost sm" id="d-flink">${t('fmCopyLink')}</button><a class="btn ghost sm" href="${esc(formUrl(f.token))}" target="_blank" rel="noopener">${t('fmOpen')}</a></div>`;
+  h+='</div>';
+  if(f.statut==='soumis'){
+    const byCat={};(f.fichiers||[]).forEach(x=>{(byCat[x.cat]=byCat[x.cat]||[]).push(x)});
+    h+=`<details data-k="fans" ${DOPEN.has('fans')?'open':''} open style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">${t('fmAnswers')}</summary><div class="fans" style="margin-top:10px">${(f.resume||[]).map(sec=>`<div><h4>${esc(sec.s)}</h4><dl>${(sec.items||[]).map(([a,b])=>`<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl></div>`).join('')}
+      ${Object.keys(byCat).length?`<div><h4>${t('fmPhotos')}</h4>${Object.entries(byCat).map(([cat,list])=>`<div class="note" style="margin-top:6px">${esc(cat)}</div><div class="fphotos">${list.filter(x=>(c.fotos||[]).includes(x.fid)).map(x=>mimg(c,x.fid,200,'','data-fv="1"')).join('')}</div>`).join('')}</div>`:''}</div></details>`;
+  }
+  return h+'</section>';
 }
 function renderDetail(soft){
   const c=CASOS.find(x=>x.id===openId);const d=$('#drawer');if(!c){closeDetail();return}
@@ -896,6 +979,7 @@ function renderDetail(soft){
     <div class="dtitle"><h2>${esc(c.cliente||'—')}</h2>
       <div class="meta">${c.referencia?`<span class="chip ref">${esc(c.referencia)}</span>`:''}${tipoChip(tipoOf(c))}<span>${fmtD(c.fechaReclamo)}</span>${c.rollos?`<span>${t('rolls',+c.rollos)}${c.formato?t('ofM',c.formato):''}</span>`:''}${c.pedido?`<span>${t('order')} ${esc(c.pedido)}</span>`:''}</div></div>
     <label class="stsel">${t('status')}<select class="inp" id="d-est">${opts(Object.keys(LABELS.est),c.estado,k=>L('est',k))}</select></label>
+    ${c.estado==='clos'?`<label class="stsel">${t('resolution')}<select class="inp" id="d-res">${opts(['',...Object.keys(LABELS.res)],c.resolucion,k=>k?L('res',k):'—')}</select></label>`:''}
     <button class="btn icon ghost" id="d-close" aria-label="${esc(t('close'))}">✕</button></div>
   ${stepper(c)}
   <div class="dbody"><div class="dcols"><div class="dcol">
@@ -908,19 +992,20 @@ function renderDetail(soft){
        <div class="bar2">${i===0?'<span></span>':`<button data-main="${esc(f)}">${esc(t('setMain'))}</button>`}<button class="del" data-rm="${esc(f)}" aria-label="${esc(t('removeT'))}">🗑</button></div></div>`).join('')}</div>
      <div class="actrow"><button class="btn sm" id="d-add">${t('addFiles')}</button><input type="file" id="d-files" accept="image/*,application/pdf" multiple hidden><span class="note">${(c.fotos||[]).length} ${t('photos').toLowerCase()}</span></div>
    </section>
+   ${formSection(c)}
    <details class="dsec" data-k="mail" ${op('mail')}><summary>✉ ${t('origMail')}</summary>
      <button class="btn sm" id="d-copymail">📋 ${t('copyMail')}</button><pre class="orig">${esc(c.textoOriginal||'—')}</pre></details>
    ${others.length?`<details class="dsec" data-k="others" ${op('others')}><summary>${t('otherClaims',esc(c.cliente))} <small>(${others.length})</small></summary><div class="tablewrap"><table><tr><th>${t('date')}</th><th>${t('ref')}</th><th>${t('problemH')}</th><th>${t('status')}</th></tr>${others.map(o=>`<tr data-go="${esc(o.id)}" style="cursor:pointer"><td>${fmtD(o.fechaReclamo)}</td><td>${esc(o.referencia)}</td><td style="white-space:normal">${esc(resumen(o))}</td><td>${stChip(o.estado)}</td></tr>`).join('')}</table></div></details>`:''}
   </div><div class="dcol">
-   <section class="dsec"><h3><i class="num">2</i>${t('diagT')}${c.diagnostico&&!editing?`<button class="btn sm aside" id="dd-edit">✎ ${t('editDiag')}</button>`:''}</h3>${!editing?`<div class="diagbox"><div class="meta">${tipoChip(c.tipoFinal)}<span>${t('imputable')} : <b>${esc(L('imp',c.imputable))}</b></span></div><div class="d">${esc(c.diagnostico)}</div>${c.sugerencia?`<div class="note">${t('sugg')} : ${esc(c.sugerencia)}</div>`:''}${c.fechaDiag?`<div class="note">${t('diagOn',fmtD(String(c.fechaDiag).slice(0,10)))}</div>`:''}</div>`
+   <section class="dsec"><h3><i class="num">3</i>${t('diagT')}${c.diagnostico&&!editing?`<button class="btn sm aside" id="dd-edit">✎ ${t('editDiag')}</button>`:''}</h3>${!editing?`<div class="diagbox"><div class="meta">${tipoChip(c.tipoFinal)}<span>${t('imputable')} : <b>${esc(L('imp',c.imputable))}</b></span></div><div class="d">${esc(c.diagnostico)}</div>${c.sugerencia?`<div class="note">${t('sugg')} : ${esc(c.sugerencia)}</div>`:''}${c.fechaDiag?`<div class="note">${t('diagOn',fmtD(String(c.fechaDiag).slice(0,10)))}</div>`:''}</div>`
      :`<div style="display:grid;gap:12px">${c.diagnostico?'':`<p class="note" style="margin:0">${t('diagFree')}</p>`}
        <div class="tstep"><label><i class="num">a</i>${t('cause')}</label><div class="tipos">${TIPOS.map(k=>`<button class="tipo" data-dtp="${k}" aria-pressed="${DD.tipo===k}"><i class="dot" style="background:var(${TCOL[k]})"></i>${esc(L('tipo',k))}</button>`).join('')}</div></div>
        <div class="tstep"><label><i class="num">b</i>${t('diagLabel')} <small>· ${t('diagSmall')}</small></label><input class="diag" id="dd-diag" placeholder="${esc(t('diagPh'))}" value="${esc(DD.diag)}"></div>
        <div class="tstep"><label><i class="num">c</i>${t('sugLabel')} <small>· ${t('sugSmall')}</small></label><input class="inp" id="dd-sug" placeholder="${esc(t('sugPh'))}" value="${esc(DD.sug)}"></div>
        <div class="actrow" style="margin-top:0"><button class="btn primary sm" id="dd-save">${t('saveDiag')}</button>${c.diagnostico?`<button class="btn ghost sm" id="dd-cancel">${t('cancel')}</button>`:''}</div></div>`}</section>
-   <section class="dsec"><h3><i class="num">3</i>${t('reply',L('lng',c.idioma||'fr'))}</h3><textarea class="inp" id="d-resp" style="min-height:150px" placeholder="${esc(t('replyPh'))}">${esc(c.respuestaDraft||'')}</textarea>
+   <section class="dsec"><h3><i class="num">4</i>${t('reply',L('lng',c.idioma||'fr'))}</h3><textarea class="inp" id="d-resp" style="min-height:150px" placeholder="${esc(t('replyPh'))}">${esc(c.respuestaDraft||'')}</textarea>
      <div class="actrow"><button class="btn sm primary" id="d-draft">${t('draftAI')}</button><button class="btn sm" id="d-copy">${t('copy')}</button><button class="btn sm" id="d-saveresp">${t('saveText')}</button><span class="aistate" id="d-aist"></span></div></section>
-   <section class="dsec"><h3><i class="num">4</i>${t('followUp')}</h3>
+   <section class="dsec"><h3><i class="num">5</i>${t('followUp')}</h3>
      <div style="display:flex;gap:8px"><input class="inp" id="d-note" placeholder="${esc(t('notePh'))}"><button class="btn primary sm" id="d-addnote">${t('addNote')}</button></div>
      <div class="quick">${t('quick').map(q=>`<button data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>
      <ul class="tlist">${timeline(c,showFullHist)}</ul>
@@ -937,6 +1022,11 @@ function renderDetail(soft){
   hydrate(d);
   d.querySelectorAll('details[data-k]').forEach(x=>x.ontoggle=()=>{x.open?DOPEN.add(x.dataset.k):DOPEN.delete(x.dataset.k)});
   $('#d-close').onclick=closeDetail;
+  if($('#d-res'))$('#d-res').onchange=async e=>{const v=e.target.value;e.target.blur();
+    try{await update(c.id,{resolucion:v},v?'Résolution : '+LABELS.res[v][0]:'Résolution effacée');toast(t('changesSaved'))}catch(_){toast(t('errSave'));renderDetail()}};
+  if($('#d-fask'))$('#d-fask').onclick=()=>openFormModal(c);
+  if($('#d-flink'))$('#d-flink').onclick=async()=>{try{await navigator.clipboard.writeText(formUrl(formOf(c).token));toast(t('copied'))}catch(_){}};
+  d.querySelectorAll('img[data-fv]').forEach(i=>i.onclick=()=>openViewer(c.id,[...d.querySelectorAll('img[data-fv]')].map(x=>x.dataset.fid),[...d.querySelectorAll('img[data-fv]')].indexOf(i)));
   $('#d-est').onchange=async e=>{const v=e.target.value;e.target.blur();
     try{await update(c.id,{estado:v},'Statut : '+LABELS.est[v][0]);toast(t('statusSaved'))}catch(_){toast(t('errSave'));renderDetail()}};
   if($('#dd-edit'))$('#dd-edit').onclick=()=>{DD_EDIT=true;DD=null;renderDetail();$('#dd-diag')?.focus()};
@@ -979,6 +1069,119 @@ function renderDetail(soft){
   $('#d-files').onchange=async e=>{const list=[];for(const f of e.target.files){if(f.type==='application/pdf')list.push({blob:f,mime:f.type,name:f.name});else if(f.type.startsWith('image/'))list.push({blob:await toJpeg(f),mime:'image/jpeg',name:f.name})}
     if(!list.length)return;toast(t('saving'));try{const nc=await api('addFiles',{id:c.id,files:await filesPayload(list)});const i=CASOS.findIndex(x=>x.id===c.id);CASOS[i]=nc;renderDetail()}catch(_){toast(t('errSave'))}};
 }
+/* ============ demander le formulaire au client ============ */
+const FM_MSG={
+ fr:{s:'Votre réclamation',b:(n,l,id)=>`Bonjour${n?' '+n:''},
+
+Merci de nous avoir contactés. Afin de pouvoir étudier votre réclamation, merci de compléter le formulaire en ligne ci-dessous, avec les photos demandées :
+
+${l}
+
+Vous pouvez l’enregistrer et le terminer plus tard avec le même lien.
+
+Important : aucune demande ne peut être traitée tant que le formulaire n’est pas complet. L’ouverture d’un dossier ne vaut pas acceptation de la prise en charge au titre de la garantie.
+
+Référence de votre dossier : ${id}
+
+Cordialement,`},
+ es:{s:'Su reclamación',b:(n,l,id)=>`Hola${n?' '+n:''}:
+
+Gracias por escribirnos. Para poder atender su reclamación, le rogamos que rellene el siguiente formulario en línea, con las fotos solicitadas:
+
+${l}
+
+Puede guardarlo y terminarlo más tarde con el mismo enlace.
+
+Importante: ninguna solicitud puede ser procesada hasta que el formulario esté completo. La apertura de un expediente no implica la aceptación de la cobertura por garantía.
+
+Referencia de su expediente: ${id}
+
+Un saludo,`},
+ en:{s:'Your claim',b:(n,l,id)=>`Hello${n?' '+n:''},
+
+Thank you for contacting us. So that we can review your claim, please fill in the online form below, with the requested photos:
+
+${l}
+
+You can save it and finish later with the same link.
+
+Important: no request can be processed until the form is complete. Opening a case does not mean the claim is accepted under the warranty.
+
+Your case reference: ${id}
+
+Kind regards,`},
+ it:{s:'Il vostro reclamo',b:(n,l,id)=>`Buongiorno${n?' '+n:''},
+
+grazie per averci contattato. Per poter esaminare il vostro reclamo, vi preghiamo di compilare il modulo online qui sotto, con le foto richieste:
+
+${l}
+
+Potete salvarlo e completarlo più tardi con lo stesso link.
+
+Importante: nessuna richiesta può essere elaborata finché il modulo non è completo. L’apertura di una pratica non comporta l’accettazione della copertura in garanzia.
+
+Riferimento della pratica: ${id}
+
+Cordiali saluti,`},
+ pt:{s:'A sua reclamação',b:(n,l,id)=>`Olá${n?' '+n:''},
+
+Obrigado pelo seu contacto. Para podermos analisar a sua reclamação, pedimos que preencha o formulário online abaixo, com as fotos solicitadas:
+
+${l}
+
+Pode guardá-lo e terminá-lo mais tarde com o mesmo link.
+
+Importante: nenhum pedido pode ser tratado enquanto o formulário não estiver completo. A abertura de um processo não implica a aceitação da cobertura pela garantia.
+
+Referência do seu processo: ${id}
+
+Cumprimentos,`},
+ de:{s:'Ihre Reklamation',b:(n,l,id)=>`Guten Tag${n?' '+n:''},
+
+vielen Dank für Ihre Nachricht. Damit wir Ihre Reklamation prüfen können, füllen Sie bitte das folgende Online-Formular mit den angeforderten Fotos aus:
+
+${l}
+
+Sie können es speichern und später mit demselben Link fertigstellen.
+
+Wichtig: Eine Anfrage kann erst bearbeitet werden, wenn das Formular vollständig ist. Die Eröffnung eines Vorgangs bedeutet keine Anerkennung eines Garantieanspruchs.
+
+Ihre Vorgangsnummer: ${id}
+
+Mit freundlichen Grüßen`}
+};
+let FM={c:null,form:null,marked:false};
+async function openFormModal(c){
+  FM={c,form:formOf(c),marked:false};
+  const lang=FM_MSG[c.idioma]?c.idioma:'fr';
+  $('#mf-lang').innerHTML=Object.keys(FM_MSG).map(k=>`<option value="${k}" ${k===lang?'selected':''}>${esc(L('lng',k)||k)}</option>`).join('');
+  $('#mf-to').value=c.email||'';$('#mf-msg').value='';$('#m-form').hidden=false;
+  await fmLink(lang);
+}
+async function fmLink(lang,mark){
+  $('#mf-st').innerHTML=`<i class="spin"></i> ${t('loading')}`;
+  try{
+    const r=await api('formLink',{id:FM.c.id,lang:['fr','es','en','it'].includes(lang)?lang:'en',mark:!!mark});
+    FM.form=r.form;FORMS[FM.c.id]=r.form;FORMS_OK=true;
+    if(r.caso){const i=CASOS.findIndex(x=>x.id===FM.c.id);if(i>=0)CASOS[i]=r.caso;FM.c=r.caso}
+    if(!mark)fmFill(lang);
+    $('#mf-st').textContent='';return true;
+  }catch(e){$('#mf-st').textContent=(e.message==='action inconnue'?t('fmNotReady'):t('errSave')+' : '+e.message);return false}
+}
+function fmFill(lang){
+  const m=FM_MSG[lang]||FM_MSG.fr;const c=FM.c;const name=String(c.contacto||'').trim().split(/\s+/)[0]||'';
+  const sj=subjectOf(c);
+  $('#mf-subj').value=`${m.s} – ${sj?sj+' – ':''}[${c.id}]`;
+  $('#mf-msg').value=m.b(name,formUrl(FM.form.token),c.id);
+}
+$('#mf-lang').onchange=e=>fmLink(e.target.value);
+async function fmMark(){if(FM.marked)return;FM.marked=true;if(await fmLink($('#mf-lang').value,true)){toast(t('fmMarked'));renderAll()}else FM.marked=false}
+$('#mf-copy').onclick=async()=>{try{await navigator.clipboard.writeText($('#mf-msg').value);toast(t('copied'))}catch(_){$('#mf-msg').select();document.execCommand('copy')}fmMark()};
+$('#mf-mail').onclick=()=>{
+  const href=`mailto:${$('#mf-to').value.trim().replace(/[^\w.@+,;-]/g,'')}?subject=${encodeURIComponent($('#mf-subj').value)}&body=${encodeURIComponent($('#mf-msg').value)}`;
+  const a=document.createElement('a');a.href=href;a.click();fmMark();
+};
+
 /* ============ visionneuse photo (zoom jusqu'à 30× la taille réelle) ============ */
 const LB={caseId:null,fids:[],i:0,tok:0};
 const V={s:1,x:0,y:0,w:0,h:0,fit:true};
@@ -1050,6 +1253,7 @@ function techCardHTML(c){
     ${f.length>1?`<div class="tstrip">${f.map((id,i)=>mimg(c,id,200,i===dr.foto?'on':'',`data-i="${i}"`)).join('')}</div>`:''}`:`<div class="big"><div class="noimg">${t('noPhoto')}</div></div>`}</div>
   <div class="tinfo"><div>${c._n?`<span class="tnum">${t('caseN',c._n,c._of)}</span>`:''}<p class="who">${esc(c.cliente)}</p><div class="meta" style="margin-top:6px">${c.referencia?`<span class="chip ref">${esc(c.referencia)}</span>`:''}${c.rollos?`<span>${t('rolls',+c.rollos)}${c.formato?t('ofM',c.formato):''}</span>`:''}${c.sintoma?`<span>${esc(L('sint',c.sintoma))}</span>`:''}<span>${fmtD(c.fechaReclamo)}</span></div></div>
    <p class="sum">${esc(resumen(c)||t('noSummary'))}</p>
+   ${(f=>f&&f.statut==='soumis'?`<details class="fbox"><summary style="cursor:pointer;font-weight:600">📝 ${t('fmAnswers')}</summary><div class="fans" style="margin-top:8px">${(f.resume||[]).filter(sec=>sec.items&&sec.items.length).map(sec=>`<div><h4>${esc(sec.s)}</h4><dl>${sec.items.map(([a,b])=>`<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl></div>`).join('')}</div></details>`:'')(formOf(c))}
    ${techMode==='done'&&c.fechaDiag?`<div class="donebox">✓ ${t('diagOn',fmtD(String(c.fechaDiag).slice(0,10)))} · ${esc(L('est',c.estado))}</div>`:''}
    <div class="tstep"><label><i class="num">1</i>${t('cause')}</label><div class="tipos">${TIPOS.map(k=>`<button class="tipo" data-tp="${k}" aria-pressed="${dr.tipo===k}"><i class="dot" style="background:var(${TCOL[k]})"></i>${esc(L('tipo',k))}</button>`).join('')}</div></div>
    <div class="tstep"><label><i class="num">2</i>${t('diagLabel')} <small>· ${t('diagSmall')}</small></label><input class="diag" data-f="diag" placeholder="${esc(t('diagPh'))}" value="${esc(dr.diag)}"></div>
